@@ -42,6 +42,11 @@ export const api = {
   alerta: (id) => request(`/alertas/${id}`),
   cerrarAlerta: (id, payload) => request(`/alertas/${id}/cerrar`, { method: 'POST', body: payload }),
   silencio: () => request('/reportes/silencio'),
+  // Trae la imagen de evidencia autenticada y devuelve un object URL para <img>.
+  evidenciaObjectUrl: async (id) => {
+    const blob = await request(`/evidencias/${id}`, { blob: true })
+    return URL.createObjectURL(blob)
+  },
   registrarLab: (payload) => request('/laboratorio', { method: 'POST', body: payload }),
   labReservorio: (id) => request(`/laboratorio/reservorio/${id}`),
   mediciones: (reservorioId) => request(`/mediciones?reservorio_id=${reservorioId}`),

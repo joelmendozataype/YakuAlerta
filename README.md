@@ -66,7 +66,7 @@ Ver [`docs/PUESTA_EN_MARCHA.md`](docs/PUESTA_EN_MARCHA.md) para el detalle.
 | HU-05 | Lectura DPD por cámara (análisis HSV) | `mobile/lib/features/camara_dpd`, `mobile/lib/core/vision/dpd_analyzer.dart` |
 | HU-06 | Recomendación y dosis | `backend/app/rules/dosis.py` |
 | HU-07 | Recordatorios de medición (notif. local) | `mobile/lib/core/notificaciones/recordatorio_service.dart` |
-| HU-08 | Evidencia georreferenciada | `mobile/lib/features/evidencia` |
+| HU-08 | Evidencia georreferenciada (captura + subida) | `mobile/lib/features/evidencia`, `backend/app/routers/evidencias.py` |
 | HU-09/10 | Alertas SMS/WhatsApp + escalamiento | `backend/app/rules/escalamiento.py`, `backend/app/services/notificaciones.py` |
 | HU-11 | Canal SMS estructurado | `backend/app/routers/sync.py` (`parse_sms`) |
 | HU-12 | Sincronización + deduplicación | `backend/app/routers/sync.py`, `mobile/lib/core/sync` |

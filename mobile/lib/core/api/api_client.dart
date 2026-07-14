@@ -78,6 +78,29 @@ class ApiClient {
     return jsonDecode(res.body) as Map<String, dynamic>;
   }
 
+  /// HU-08 (2ª fase): sube la foto de evidencia de una medición ya sincronizada.
+  Future<void> subirEvidencia(
+    String uuidMedicion,
+    String rutaFoto, {
+    double? latitud,
+    double? longitud,
+  }) async {
+    final req = http.MultipartRequest(
+      'POST', Uri.parse('$baseUrl/mediciones/$uuidMedicion/evidencia'),
+    );
+    final t = await token;
+    if (t != null) req.headers['Authorization'] = 'Bearer $t';
+    if (latitud != null) req.fields['latitud'] = latitud.toString();
+    if (longitud != null) req.fields['longitud'] = longitud.toString();
+    req.files.add(await http.MultipartFile.fromPath('archivo', rutaFoto));
+
+    final streamed = await req.send();
+    if (streamed.statusCode >= 300) {
+      final body = await streamed.stream.bytesToString();
+      throw ApiException(_detalle(body, 'Error subiendo la evidencia'));
+    }
+  }
+
   /// HU-11: canal SMS estructurado (para pasarela / modo degradado).
   Future<void> enviarSms(String texto) async {
     final res = await http.post(

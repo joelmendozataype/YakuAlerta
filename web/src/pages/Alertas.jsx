@@ -2,6 +2,32 @@ import { useEffect, useState } from 'react'
 import { api } from '../api'
 import { NivelBadge, Spinner } from '../components/ui'
 
+// Carga y muestra las fotos de evidencia de una alerta (HU-08).
+function Evidencia({ ids }) {
+  const [urls, setUrls] = useState([])
+  useEffect(() => {
+    let vivos = []
+    Promise.all(ids.map((id) => api.evidenciaObjectUrl(id).catch(() => null)))
+      .then((res) => { vivos = res.filter(Boolean); setUrls(vivos) })
+    return () => vivos.forEach((u) => URL.revokeObjectURL(u))
+  }, [ids])
+
+  if (urls.length === 0) return null
+  return (
+    <div>
+      <p className="font-semibold text-slate-700 text-sm mb-1">📷 Evidencia</p>
+      <div className="flex gap-2 flex-wrap">
+        {urls.map((u, i) => (
+          <a key={i} href={u} target="_blank" rel="noreferrer">
+            <img src={u} alt={`Evidencia ${i + 1}`}
+              className="h-24 w-24 object-cover rounded-lg border border-slate-200" />
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Alertas() {
   const [estado, setEstado] = useState('ACTIVA')
   const [alertas, setAlertas] = useState([])
@@ -122,6 +148,9 @@ function DetalleAlerta({ alerta, onClose, onCerrada }) {
             Medición de origen #{detalle.medicion_id} · {new Date(detalle.fecha_generacion).toLocaleString('es-PE')}
           </span>
         </div>
+
+        {/* Evidencia fotográfica (HU-08) */}
+        {detalle.evidencia_ids?.length > 0 && <Evidencia ids={detalle.evidencia_ids} />}
 
         {/* Protocolo */}
         {detalle.protocolo && (

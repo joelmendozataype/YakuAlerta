@@ -153,6 +153,7 @@ class AlertaOut(BaseModel):
     cloro_mg_l: float | None = None
     turbidez_unt: float | None = None
     protocolo: str | None = None
+    evidencia_ids: list[int] = []
     notificaciones: list[NotificacionOut] = []
 
 

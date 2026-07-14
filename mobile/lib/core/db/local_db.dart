@@ -17,7 +17,7 @@ class LocalDb {
 
   Future<Database> _abrir() async {
     final ruta = p.join(await getDatabasesPath(), 'yakualerta.db');
-    return openDatabase(ruta, version: 1, onCreate: _crear);
+    return openDatabase(ruta, version: 2, onCreate: _crear, onUpgrade: _actualizar);
   }
 
   Future<void> _crear(Database d, int v) async {
@@ -35,7 +35,8 @@ class LocalDb {
         estado_sync    TEXT NOT NULL DEFAULT 'PENDIENTE',
         ruta_foto      TEXT,
         latitud        REAL,
-        longitud       REAL
+        longitud       REAL,
+        foto_sync      INTEGER NOT NULL DEFAULT 0
       )
     ''');
     await d.execute('''
@@ -48,6 +49,15 @@ class LocalDb {
       )
     ''');
     await d.execute('CREATE INDEX idx_med_sync ON medicion(estado_sync)');
+  }
+
+  /// Migraciones de esquema entre versiones.
+  Future<void> _actualizar(Database d, int desde, int hasta) async {
+    if (desde < 2) {
+      // v2: seguimiento de la subida de evidencia fotográfica (HU-08).
+      await d.execute(
+          'ALTER TABLE medicion ADD COLUMN foto_sync INTEGER NOT NULL DEFAULT 0');
+    }
   }
 
   // ─── Mediciones ───────────────────────────────────────────────
@@ -81,6 +91,20 @@ class LocalDb {
   Future<void> marcarEstado(String uuid, EstadoSync estado) async {
     final d = await db;
     await d.update('medicion', {'estado_sync': estado.valor},
+        where: 'uuid_registro = ?', whereArgs: [uuid]);
+  }
+
+  /// Mediciones ya sincronizadas cuya foto aún no se subió (HU-08, 2ª fase).
+  Future<List<Medicion>> fotosPendientes() async {
+    final d = await db;
+    final rows = await d.query('medicion',
+        where: "ruta_foto IS NOT NULL AND foto_sync = 0 AND estado_sync = 'SINCRONIZADO'");
+    return rows.map(Medicion.fromDb).toList();
+  }
+
+  Future<void> marcarFotoSubida(String uuid) async {
+    final d = await db;
+    await d.update('medicion', {'foto_sync': 1},
         where: 'uuid_registro = ?', whereArgs: [uuid]);
   }
 

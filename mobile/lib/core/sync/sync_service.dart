@@ -45,6 +45,8 @@ class SyncService {
       for (final m in pendientes) {
         await _db.marcarEstado(m.uuidRegistro, EstadoSync.sincronizado);
       }
+      // 2ª fase: subir las fotos de evidencia ya que las mediciones existen.
+      await _subirFotosPendientes();
       return ResultadoSync(
         (resp['insertadas'] as int?) ?? 0,
         (resp['duplicadas'] as int?) ?? 0,
@@ -54,6 +56,23 @@ class SyncService {
       return null; // se reintenta en el próximo evento de conectividad
     } finally {
       _sincronizando = false;
+    }
+  }
+
+  /// HU-08 (2ª fase): sube las fotos de evidencia de mediciones ya sincronizadas.
+  /// Cada foto se marca como subida para no repetir; los fallos se reintentan
+  /// en la próxima sincronización.
+  Future<void> _subirFotosPendientes() async {
+    for (final m in await _db.fotosPendientes()) {
+      try {
+        await _api.subirEvidencia(
+          m.uuidRegistro, m.rutaFoto!,
+          latitud: m.latitud, longitud: m.longitud,
+        );
+        await _db.marcarFotoSubida(m.uuidRegistro);
+      } on ApiException {
+        // se reintenta luego; no interrumpe la subida del resto
+      }
     }
   }
 }
