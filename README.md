@@ -76,6 +76,13 @@ Ver [`docs/PUESTA_EN_MARCHA.md`](docs/PUESTA_EN_MARCHA.md) para el detalle.
 | HU-17 | Reportes PDF/Excel | `backend/app/services/reportes.py` |
 | HU-18 | Resultados de laboratorio | `backend/app/routers/laboratorio.py` |
 
+## Roadmap
+
+- **Fase 2 — Visión por computadora con TensorFlow Lite:** modelo de lectura DPD
+  entrenado con fotos reales del piloto, on-device y offline. Diseño técnico en
+  [`docs/FASE2_VISION_TFLITE.md`](docs/FASE2_VISION_TFLITE.md). El MVP ya recolecta
+  el dataset (HU-05 confirmaciones + HU-08 evidencia).
+
 ## Licencia
 
 Software libre / código abierto (MVP de la hackathon). MIT.
