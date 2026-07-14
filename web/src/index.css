@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-100 text-slate-800 antialiased;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-slate-200 p-5;
+  }
+  .btn {
+    @apply inline-flex items-center gap-2 rounded-lg px-4 py-2 font-medium transition
+           focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50;
+  }
+  .btn-primary { @apply btn bg-agua-700 text-white hover:bg-agua-800 focus:ring-agua-500; }
+  .btn-ghost   { @apply btn bg-slate-100 text-slate-700 hover:bg-slate-200; }
+  .input {
+    @apply w-full rounded-lg border border-slate-300 px-3 py-2
+           focus:border-agua-500 focus:ring-1 focus:ring-agua-500 outline-none;
+  }
+  .badge { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold; }
+}
+
+/* Leaflet: asegurar altura del contenedor de mapa */
+.leaflet-container { height: 100%; width: 100%; border-radius: 0.75rem; }

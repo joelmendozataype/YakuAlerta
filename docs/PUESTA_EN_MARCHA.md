@@ -1,0 +1,125 @@
+# 🚀 Puesta en marcha — YakuAlerta
+
+## Requisitos
+
+| Herramienta | Versión | Para |
+|-------------|---------|------|
+| Docker + Docker Compose | reciente | Backend + BD + tablero (todo en uno) |
+| Flutter SDK | ≥ 3.19 | App móvil |
+| (opcional) Python 3.12 | | Correr el backend sin Docker |
+| (opcional) Node 20 | | Correr el tablero sin Docker |
+
+---
+
+## Opción A — Todo con Docker (recomendada)
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+Esto levanta cuatro contenedores:
+
+| Servicio | URL | Notas |
+|----------|-----|-------|
+| `db` (PostgreSQL 16 + PostGIS) | localhost:5432 | esquema creado por `backend/db/init.sql` |
+| `redis` | localhost:6379 | cola de tareas / recordatorios |
+| `api` (FastAPI) | http://localhost:8000 · **/docs** | siembra datos demo al arrancar |
+| `web` (tablero React) | http://localhost:5173 | |
+
+**Login del tablero (demo):**
+- ATM → `987000020` / `yaku2026`
+- DESA → `987000030` · Salud → `987000040` · Admin → `987000099`
+
+---
+
+## Opción B — Backend sin Docker, con SQLite (sin instalar base de datos)
+
+La vía más rápida: no instalas ningún servidor de BD, se usa un archivo SQLite.
+El `backend/.env` ya viene configurado con `DATABASE_URL=sqlite:///./yakualerta.db`.
+
+```powershell
+cd backend
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+
+python -m app.seed            # crea el esquema + datos demo en yakualerta.db
+uvicorn app.main:app --reload
+```
+
+→ http://localhost:8000/docs · el archivo `yakualerta.db` aparece en `backend/`.
+Para reiniciar los datos, borra `yakualerta.db` y vuelve a correr `app.seed`.
+
+## Opción C — Backend sin Docker, con PostgreSQL
+
+```bash
+cd backend
+python -m venv .venv && .venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+
+# Instala PostgreSQL, crea la BD y carga backend/db/init.sql.
+# Cambia DATABASE_URL en backend/.env a:
+#   postgresql+psycopg://postgres:TU_PASSWORD@localhost:5432/yakualerta
+python -m app.seed
+uvicorn app.main:app --reload
+```
+
+Pruebas del motor de reglas y del deduplicador:
+
+```bash
+cd backend && pytest          # boundary values 0.29/0.30/0.49/0.50 mg/L; 5/6 UNT
+```
+
+---
+
+## Tablero web sin Docker
+
+```bash
+cd web
+npm install
+npm run dev        # http://localhost:5173  (usa VITE_API_URL, por defecto :8000)
+```
+
+---
+
+## App móvil
+
+Ver [`mobile/README.md`](../mobile/README.md). Resumen:
+
+```bash
+cd mobile
+flutter create .       # genera android/ e ios/
+flutter pub get
+flutter run            # emulador Android; API en http://10.0.2.2:8000
+```
+
+---
+
+## Demostración guiada (Demo Day)
+
+1. **Registro offline** (app, en modo avión): mide `cloro 0.10 · turbidez 8` en un
+   reservorio → semáforo 🔴 al instante + dosis de recloración + protocolo.
+2. **Reconexión**: desactiva el modo avión → la medición se sincroniza sola.
+3. **Alerta** (tablero): aparece en la **bandeja de alertas** con su protocolo y
+   las notificaciones enviadas (en modo simulado se ven en los logs de `api`).
+4. **Cierre trazable**: intenta cerrar la alerta roja sin remedición → **se bloquea**
+   (CA-HU16-02). Registra una remedición verde y ciérrala con evidencia.
+5. **Silencio de datos**: la comunidad *Huaribamba* no tiene mediciones → aparece
+   como silencio en el tablero (HU-15).
+6. **Reporte**: en *Reportes*, descarga el consolidado del distrito en PDF/Excel.
+7. **Laboratorio**: registra un resultado *NO CONFORME* (DESA) → el reservorio se
+   fuerza a 🔴 hasta el cierre sanitario (HU-18).
+
+---
+
+## Verificación de los criterios de aceptación
+
+| Criterio | Cómo probarlo |
+|----------|---------------|
+| CA-HU03-01/02/03 | `pytest backend/tests/test_motor_riesgo.py` |
+| CA-HU06-01 | `pytest backend/tests/test_dosis.py` |
+| CA-HU11-01 | `POST /sync/sms` con `YA;RES-001;CL:0.10;TB:8` (Swagger) |
+| CA-HU12-02 | Enviar la misma medición por `/sync/sms` y luego por `/sync` → 1 sola fila |
+| CA-HU16-02 | `POST /alertas/{id}/cerrar` sin remedición en alerta roja → 422 |
+| CA-HU18-01 | `POST /laboratorio` con `dictamen=NO_CONFORME` → reservorio en rojo |
