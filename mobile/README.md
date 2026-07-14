@@ -19,9 +19,15 @@ lib/
 └── features/
     ├── auth/login_screen.dart        # HU-01
     ├── home/home_screen.dart         # reservorios, estado offline, cola
+    ├── camara_dpd/                   # HU-05 lectura DPD por cámara (análisis HSV)
+    ├── evidencia/                    # HU-08 foto georreferenciada
     └── medicion/
         ├── registro_screen.dart      # HU-02 (validación de rangos físicos)
         └── resultado_screen.dart     # HU-03 semáforo + HU-06 dosis
+
+core/vision/dpd_analyzer.dart         # HU-05 estimación de cloro por color (testeable)
+core/notificaciones/…                 # HU-07 recordatorios locales
+core/evidencia/…                      # HU-08 captura + compresión + GPS
 ```
 
 ## Puesta en marcha

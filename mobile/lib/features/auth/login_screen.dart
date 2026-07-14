@@ -91,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: YakuColors.rojo.withOpacity(0.1),
+                            color: YakuColors.rojo.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(_error!, style: const TextStyle(color: YakuColors.rojo)),

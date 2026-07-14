@@ -63,9 +63,9 @@ Ver [`docs/PUESTA_EN_MARCHA.md`](docs/PUESTA_EN_MARCHA.md) para el detalle.
 | HU-02 | Registro offline de mediciones | `mobile/lib/features/medicion`, `backend/app/routers/mediciones.py` |
 | HU-03 | Clasificación y semáforo | `backend/app/rules/motor_riesgo.py`, `mobile/lib/core/rules` |
 | HU-04 | Gestión de entidades | `backend/app/routers/admin.py` |
-| HU-05 | Lectura DPD por cámara | `mobile/lib/features/camara_dpd` |
+| HU-05 | Lectura DPD por cámara (análisis HSV) | `mobile/lib/features/camara_dpd`, `mobile/lib/core/vision/dpd_analyzer.dart` |
 | HU-06 | Recomendación y dosis | `backend/app/rules/dosis.py` |
-| HU-07 | Recordatorios de medición | `mobile/lib/features/recordatorios` |
+| HU-07 | Recordatorios de medición (notif. local) | `mobile/lib/core/notificaciones/recordatorio_service.dart` |
 | HU-08 | Evidencia georreferenciada | `mobile/lib/features/evidencia` |
 | HU-09/10 | Alertas SMS/WhatsApp + escalamiento | `backend/app/rules/escalamiento.py`, `backend/app/services/notificaciones.py` |
 | HU-11 | Canal SMS estructurado | `backend/app/routers/sync.py` (`parse_sms`) |

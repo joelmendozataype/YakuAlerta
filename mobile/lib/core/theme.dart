@@ -51,7 +51,7 @@ ThemeData yakuTheme() {
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: 0,
       color: Colors.white,
       shape: RoundedRectangleBorder(

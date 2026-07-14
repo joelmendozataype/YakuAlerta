@@ -111,7 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: _online ? YakuColors.verde.withOpacity(0.1) : Colors.orange.withOpacity(0.12),
+        color: _online ? YakuColors.verde.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: _online ? YakuColors.verde : Colors.orange),
       ),

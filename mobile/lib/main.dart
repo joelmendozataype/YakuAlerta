@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/api/api_client.dart';
+import 'core/notificaciones/recordatorio_service.dart';
 import 'core/sync/sync_service.dart';
 import 'core/theme.dart';
 import 'features/auth/login_screen.dart';
@@ -9,6 +10,7 @@ import 'features/home/home_screen.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   SyncService.instance.iniciarAutoSync();
+  RecordatorioService.instance.inicializar(); // HU-07 (no bloquea el arranque)
   runApp(const YakuApp());
 }
 

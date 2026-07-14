@@ -127,7 +127,7 @@ class _ResultadoScreenState extends State<ResultadoScreen> {
                 if (widget.recomendacion != null) _bloqueRecomendacion(),
                 if (widget.recomendacion == null)
                   Card(
-                    color: YakuColors.verde.withOpacity(0.08),
+                    color: YakuColors.verde.withValues(alpha: 0.08),
                     child: const Padding(
                       padding: EdgeInsets.all(16),
                       child: Text('Agua segura. Continúa tu vigilancia semanal habitual.',
@@ -158,7 +158,7 @@ class _ResultadoScreenState extends State<ResultadoScreen> {
   Widget _bloqueRecomendacion() {
     final r = widget.recomendacion!;
     return Card(
-      color: _color.withOpacity(0.06),
+      color: _color.withValues(alpha: 0.06),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

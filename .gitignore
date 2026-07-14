@@ -42,3 +42,7 @@ postgres_data/
 
 # CI: requiere scope workflow en el token; subir desde la UI de GitHub
 .github/workflows/
+
+# IDEs
+.idea/
+.qodo/

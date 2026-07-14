@@ -1,11 +1,17 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/db/local_db.dart';
+import '../../core/evidencia/evidencia_service.dart';
 import '../../core/models/medicion.dart';
 import '../../core/models/reservorio.dart';
+import '../../core/notificaciones/recordatorio_service.dart';
 import '../../core/rules/motor_riesgo.dart';
 import '../../core/theme.dart';
+import '../camara_dpd/camara_dpd_screen.dart';
+import '../evidencia/captura_foto_screen.dart';
 import 'resultado_screen.dart';
 
 /// HU-02: registro offline de medición (flujo lineal de pocos pasos, RNF-02).
@@ -22,6 +28,11 @@ class _RegistroScreenState extends State<RegistroScreen> {
   final _obs = TextEditingController();
   String _metodo = 'MANUAL';
   bool _guardando = false;
+
+  // Evidencia fotográfica georreferenciada (HU-08)
+  String? _rutaFoto;
+  double? _lat, _lon;
+  bool _adjuntando = false;
 
   static const cloroMaxFisico = 20.0;
   static const turbidezMaxFisica = 1000.0;
@@ -42,6 +53,53 @@ class _RegistroScreenState extends State<RegistroScreen> {
     }
     if (c == null && t == null) return 'Ingresa al menos el cloro o la turbidez.';
     return null;
+  }
+
+  /// HU-05: abre la cámara, estima el cloro del comparador DPD y lo trae al
+  /// formulario para confirmación/corrección (marca el método CAMARA_DPD).
+  Future<void> _leerConCamara() async {
+    final estimado = await Navigator.push<double?>(
+      context,
+      MaterialPageRoute(builder: (_) => const CamaraDpdScreen()),
+    );
+    if (estimado != null) {
+      setState(() {
+        _cloro.text = estimado.toStringAsFixed(2);
+        _metodo = 'CAMARA_DPD';
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Valor estimado por cámara. Verifícalo o corrígelo antes de guardar.'),
+        ));
+      }
+    }
+  }
+
+  /// HU-08: captura una foto de evidencia, la comprime (RNF-03) y toma la
+  /// ubicación GPS solo en ese momento (RNF-08).
+  Future<void> _adjuntarEvidencia() async {
+    final ruta = await Navigator.push<String?>(
+      context,
+      MaterialPageRoute(builder: (_) => const CapturaFotoScreen()),
+    );
+    if (ruta == null) return;
+    setState(() => _adjuntando = true);
+    try {
+      final comprimida = await EvidenciaService.instance.comprimirYGuardar(ruta);
+      final pos = await EvidenciaService.instance.ubicacionActual();
+      setState(() {
+        _rutaFoto = comprimida;
+        _lat = pos?.latitude;
+        _lon = pos?.longitude;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo adjuntar la evidencia: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _adjuntando = false);
+    }
   }
 
   Future<void> _confirmar() async {
@@ -73,8 +131,15 @@ class _RegistroScreenState extends State<RegistroScreen> {
       metodoCloro: _metodo,
       observaciones: _obs.text.isEmpty ? null : _obs.text,
       nivel: resultado.nivel,
+      rutaFoto: _rutaFoto,
+      latitud: _lat,
+      longitud: _lon,
     );
     await LocalDb.instance.guardarMedicion(medicion);
+
+    // HU-07: reprograma el recordatorio de la próxima medición semanal.
+    RecordatorioService.instance.programarSemanal(
+      widget.reservorio.reservorioId, widget.reservorio.codigo);
 
     if (!mounted) return;
     setState(() => _guardando = false);
@@ -122,12 +187,7 @@ class _RegistroScreenState extends State<RegistroScreen> {
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
-              onPressed: () {
-                // HU-05: lectura por cámara del comparador DPD (estructura lista).
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('Lectura por cámara DPD (HU-05): módulo de visión HSV en integración.')));
-                setState(() => _metodo = 'MANUAL');
-              },
+              onPressed: _leerConCamara,
               icon: const Icon(Icons.camera_alt_outlined),
               label: const Text('Leer con la cámara (DPD)'),
             ),
@@ -149,6 +209,9 @@ class _RegistroScreenState extends State<RegistroScreen> {
               hintText: 'Color, olor, presencia de turbidez, estado del reservorio…',
             ),
           ),
+          const SizedBox(height: 20),
+          _paso(4, 'Evidencia (opcional)'),
+          _seccionEvidencia(),
           const SizedBox(height: 28),
           ElevatedButton.icon(
             onPressed: _guardando ? null : _confirmar,
@@ -165,6 +228,60 @@ class _RegistroScreenState extends State<RegistroScreen> {
             style: TextStyle(color: Colors.black54, fontSize: 12),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _seccionEvidencia() {
+    if (_adjuntando) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Row(children: [
+          SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+          SizedBox(width: 12), Text('Comprimiendo y ubicando…'),
+        ]),
+      );
+    }
+    if (_rutaFoto != null) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.file(File(_rutaFoto!), width: 64, height: 64, fit: BoxFit.cover),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Foto adjunta', style: TextStyle(fontWeight: FontWeight.w600)),
+                    Text(
+                      _lat != null
+                          ? '📍 ${_lat!.toStringAsFixed(5)}, ${_lon!.toStringAsFixed(5)}'
+                          : 'Sin ubicación GPS',
+                      style: const TextStyle(fontSize: 12, color: Colors.black54),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: YakuColors.rojo),
+                onPressed: () => setState(() { _rutaFoto = null; _lat = null; _lon = null; }),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: OutlinedButton.icon(
+        onPressed: _adjuntarEvidencia,
+        icon: const Icon(Icons.add_a_photo_outlined),
+        label: const Text('Adjuntar foto georreferenciada'),
       ),
     );
   }
