@@ -70,6 +70,7 @@ def crear_usuario(datos: UsuarioIn, db: Session = Depends(get_db)):
     u = Usuario(
         nombres=datos.nombres, telefono=datos.telefono,
         clave_hash=hash_clave(datos.clave), rol=datos.rol, entidad=datos.entidad,
+        ubigeo_id=datos.ubigeo_id, comunidad_id=datos.comunidad_id,
     )
     db.add(u)
     _commit(db)

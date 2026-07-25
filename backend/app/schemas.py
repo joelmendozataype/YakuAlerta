@@ -24,6 +24,8 @@ class UsuarioOut(BaseModel):
     telefono: str
     rol: RolUsuario
     entidad: str | None = None
+    ubigeo_id: int | None = None
+    comunidad_id: int | None = None
     activo: bool = True
 
 
@@ -77,6 +79,9 @@ class UsuarioIn(BaseModel):
     clave: str
     rol: RolUsuario
     entidad: str | None = None
+    # Ámbito territorial (RF-06). Vacíos = alcance regional.
+    ubigeo_id: int | None = None
+    comunidad_id: int | None = None
 
 
 # ─── Mediciones / sync ───────────────────────────────────────────

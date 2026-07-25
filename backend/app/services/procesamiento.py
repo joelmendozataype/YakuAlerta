@@ -10,11 +10,15 @@ from sqlalchemy.orm import Session
 
 from ..enums import CanalNotif, EstadoAlerta, EstadoSync, NivelRiesgo, RolUsuario
 from ..models import (
-    Alerta, Comunidad, Medicion, Notificacion, ParametroNormativo,
-    RecomendacionDosis, Reservorio, Usuario,
+    Alerta, AsignacionOperador, Comunidad, Medicion, Notificacion,
+    ParametroNormativo, RecomendacionDosis, Reservorio, Usuario,
 )
 from ..rules import Umbrales, calcular_dosis, clasificar, destinatarios_para
+from ..rules.escalamiento import ambito_de
 from . import notificaciones as notif
+
+# Severidad para decidir si una alerta abierta debe escalar.
+_SEVERIDAD = {NivelRiesgo.VERDE: 0, NivelRiesgo.AMARILLO: 1, NivelRiesgo.ROJO: 2}
 
 
 def cargar_umbrales(db: Session) -> Umbrales:
@@ -82,7 +86,25 @@ def procesar_medicion(db: Session, medicion: Medicion) -> Alerta | None:
     if resultado.nivel == NivelRiesgo.VERDE:
         return None
 
-    # ── Alerta ───────────────────────────────────────────────────
+    # ── Agrupación: si el reservorio ya tiene un caso abierto, no se
+    #    crea una alerta nueva ni se vuelve a notificar (evita alarmas
+    #    injustificadas). Solo se notifica cuando el riesgo ESCALA.
+    abierta = (
+        db.query(Alerta)
+        .join(Medicion, Alerta.medicion_id == Medicion.medicion_id)
+        .filter(Medicion.reservorio_id == medicion.reservorio_id)
+        .filter(Alerta.estado.in_([EstadoAlerta.ACTIVA, EstadoAlerta.EN_PROCESO]))
+        .order_by(Alerta.fecha_generacion.desc())
+        .first()
+    )
+    if abierta is not None:
+        if _SEVERIDAD[resultado.nivel] > _SEVERIDAD[abierta.nivel]:
+            abierta.nivel = resultado.nivel          # amarillo → rojo
+            _notificar(db, abierta, medicion, reservorio,
+                       protocolo=reco.protocolo if reco else None)
+        return abierta
+
+    # ── Alerta nueva ─────────────────────────────────────────────
     alerta = Alerta(
         medicion_id=medicion.medicion_id,
         nivel=resultado.nivel,
@@ -97,6 +119,43 @@ def procesar_medicion(db: Session, medicion: Medicion) -> Alerta | None:
     return alerta
 
 
+def _destinatarios(db: Session, roles: list[RolUsuario], comunidad: Comunidad | None,
+                   reservorio: Reservorio) -> list[Usuario]:
+    """Usuarios a notificar, filtrados por rol y por jurisdicción territorial.
+
+    Un usuario sin ámbito territorial declarado (ubigeo/comunidad vacíos) se
+    considera de alcance regional y siempre recibe la alerta de su rol.
+    """
+    seleccion: list[Usuario] = []
+    for rol in roles:
+        candidatos = (
+            db.query(Usuario)
+            .filter(Usuario.rol == rol, Usuario.activo.is_(True))
+            .all()
+        )
+        ambito = ambito_de(rol)
+        for u in candidatos:
+            if rol == RolUsuario.OPERADOR:
+                # El operador se determina por su asignación vigente al reservorio.
+                asignado = (
+                    db.query(AsignacionOperador)
+                    .filter_by(usuario_id=u.usuario_id,
+                               reservorio_id=reservorio.reservorio_id, vigente=True)
+                    .first()
+                )
+                if asignado:
+                    seleccion.append(u)
+            elif ambito == "comunidad":
+                if u.comunidad_id is None or (comunidad and u.comunidad_id == comunidad.comunidad_id):
+                    seleccion.append(u)
+            elif ambito == "distrito":
+                if u.ubigeo_id is None or (comunidad and u.ubigeo_id == comunidad.ubigeo_id):
+                    seleccion.append(u)
+            else:  # regional
+                seleccion.append(u)
+    return seleccion
+
+
 def _notificar(db: Session, alerta: Alerta, medicion: Medicion,
                reservorio: Reservorio, protocolo: str | None) -> None:
     comunidad = db.get(Comunidad, reservorio.comunidad_id)
@@ -104,26 +163,28 @@ def _notificar(db: Session, alerta: Alerta, medicion: Medicion,
     if not roles:
         return
 
-    mensaje = notif.componer_mensaje_alerta(
+    nombre_comunidad = comunidad.nombre if comunidad else "—"
+
+    # Mensaje institucional (con valores y protocolo)
+    mensaje_inst = notif.componer_mensaje_alerta(
         nivel=alerta.nivel.value,
-        comunidad=comunidad.nombre if comunidad else "—",
+        comunidad=nombre_comunidad,
         reservorio=reservorio.codigo,
         cloro=float(medicion.cloro_mg_l) if medicion.cloro_mg_l is not None else None,
         turbidez=float(medicion.turbidez_unt) if medicion.turbidez_unt is not None else None,
         protocolo=protocolo,
         medicion_id=medicion.medicion_id,
     )
+    # Aviso a la población (lenguaje llano, sin cifras técnicas)
+    mensaje_pob = notif.componer_mensaje_poblacion(alerta.nivel.value, nombre_comunidad)
 
-    # Destinatarios: usuarios de los roles del escalamiento (demo: todos los
-    # activos de esos roles; en producción se filtra por jurisdicción/comunidad).
-    destinatarios = (
-        db.query(Usuario)
-        .filter(Usuario.rol.in_([RolUsuario(r.value) for r in roles]))
-        .filter(Usuario.activo.is_(True))
-        .all()
-    )
-    for u in destinatarios:
-        canal = CanalNotif.WHATSAPP if u.rol != RolUsuario.OPERADOR else CanalNotif.SMS
+    for u in _destinatarios(db, roles, comunidad, reservorio):
+        es_poblacion = u.rol == RolUsuario.POBLACION
+        mensaje = mensaje_pob if es_poblacion else mensaje_inst
+        # El SMS es el canal garantizado en zonas sin datos (operador y población).
+        canal = (CanalNotif.SMS
+                 if u.rol in (RolUsuario.OPERADOR, RolUsuario.POBLACION)
+                 else CanalNotif.WHATSAPP)
         estado = notif.enviar(canal, u.telefono, mensaje)
         db.add(Notificacion(
             alerta_id=alerta.alerta_id, usuario_id=u.usuario_id,

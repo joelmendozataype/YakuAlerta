@@ -45,6 +45,26 @@ def enviar(canal: CanalNotif, destino: str, mensaje: str) -> EstadoNotif:
         return EstadoNotif.FALLIDO
 
 
+def componer_mensaje_poblacion(nivel: str, comunidad: str) -> str:
+    """Aviso para la población usuaria: lenguaje llano, sin valores técnicos.
+
+    Las bases exigen que la comunicación sea comprensible y accionable para la
+    población; por eso este mensaje omite cifras y entrega solo la instrucción.
+    """
+    if nivel == "ROJO":
+        return (
+            f"AVISO YakuAlerta — {comunidad}\n"
+            "El agua NO ES SEGURA para beber en este momento.\n"
+            "HIERVA el agua 1 minuto antes de consumirla o de usarla para cocinar.\n"
+            "La JASS ya está atendiendo el problema. Le avisaremos cuando el agua "
+            "vuelva a ser segura."
+        )
+    return (
+        f"AVISO YakuAlerta — {comunidad}\n"
+        "El agua está en observación. Por precaución, hierva el agua antes de beberla."
+    )
+
+
 def componer_mensaje_alerta(
     nivel: str, comunidad: str, reservorio: str,
     cloro: float | None, turbidez: float | None,

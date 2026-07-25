@@ -9,6 +9,10 @@ class RolUsuario(str, enum.Enum):
     DESA = "DESA"
     SALUD = "SALUD"
     ADMIN = "ADMIN"
+    # Usuarios principales exigidos por las bases del Desafío 2
+    AUTORIDAD_LOCAL = "AUTORIDAD_LOCAL"   # autoridad comunal / municipal
+    DRVCS = "DRVCS"                       # Dir. Reg. Vivienda, Construcción y Saneamiento
+    POBLACION = "POBLACION"               # contacto comunitario (difusión a la población)
 
 
 class NivelRiesgo(str, enum.Enum):

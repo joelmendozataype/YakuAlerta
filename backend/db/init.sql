@@ -15,7 +15,10 @@ END $$;
 -- ---------------------------------------------------------------------------
 --  0. TIPOS ENUMERADOS (dominios controlados del negocio)
 -- ---------------------------------------------------------------------------
-CREATE TYPE rol_usuario      AS ENUM ('OPERADOR','DIRECTIVO_JASS','ATM','DESA','SALUD','ADMIN');
+-- Roles: los seis operativos más los exigidos por las bases del Desafío 2
+-- (autoridad local, DRVCS y contacto comunitario para la población usuaria).
+CREATE TYPE rol_usuario      AS ENUM ('OPERADOR','DIRECTIVO_JASS','ATM','DESA','SALUD','ADMIN',
+                                      'AUTORIDAD_LOCAL','DRVCS','POBLACION');
 CREATE TYPE nivel_riesgo     AS ENUM ('VERDE','AMARILLO','ROJO');
 CREATE TYPE metodo_lectura   AS ENUM ('CAMARA_DPD','MANUAL');
 CREATE TYPE estado_sync      AS ENUM ('PENDIENTE','ENVIADO_SMS','SINCRONIZADO');
@@ -80,9 +83,15 @@ CREATE TABLE usuario (
     clave_hash       VARCHAR(255) NOT NULL,
     rol              rol_usuario  NOT NULL,
     entidad          VARCHAR(120),
+    ubigeo_id        INT,                                   -- ámbito distrital (NULL = regional)
+    comunidad_id     INT,                                   -- ámbito comunal  (NULL = todo el distrito)
     activo           BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at       TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    updated_at       TIMESTAMPTZ  NOT NULL DEFAULT now()
+    updated_at       TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    CONSTRAINT fk_usuario_ubigeo
+        FOREIGN KEY (ubigeo_id) REFERENCES ubigeo(ubigeo_id) ON DELETE SET NULL,
+    CONSTRAINT fk_usuario_comunidad
+        FOREIGN KEY (comunidad_id) REFERENCES comunidad(comunidad_id) ON DELETE SET NULL
 );
 
 -- ---------------------------------------------------------------------------

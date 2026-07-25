@@ -81,6 +81,10 @@ class Usuario(Base):
     clave_hash: Mapped[str] = mapped_column(String(255))
     rol: Mapped[enums.RolUsuario] = mapped_column(pg_enum(enums.RolUsuario, "rol_usuario"))
     entidad: Mapped[str | None] = mapped_column(String(120))
+    # Ámbito territorial del destinatario (RF-06): si están vacíos, el usuario
+    # tiene alcance regional y recibe las alertas de todo su rol.
+    ubigeo_id: Mapped[int | None] = mapped_column(ForeignKey("ubigeo.ubigeo_id"))
+    comunidad_id: Mapped[int | None] = mapped_column(ForeignKey("comunidad.comunidad_id"))
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
