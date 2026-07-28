@@ -19,7 +19,14 @@ def verificar_clave(clave: str, clave_hash: str) -> bool:
         return False
 
 
-def crear_token(usuario_id: int, rol: str, nombres: str) -> str:
+def crear_token(usuario_id: int, rol: str, nombres: str, sid: int | None = None) -> str:
+    """Emite un JWT de acceso.
+
+    ``sid`` identifica la sesión de un dispositivo vinculado por QR. Su presencia
+    hace el token revocable: si el usuario cierra esa sesión desde la app, el
+    token deja de ser válido aunque no haya expirado. Los inicios de sesión con
+    clave no llevan ``sid`` (el propio dispositivo es la llave maestra).
+    """
     ahora = datetime.now(timezone.utc)
     payload = {
         "sub": str(usuario_id),
@@ -28,6 +35,8 @@ def crear_token(usuario_id: int, rol: str, nombres: str) -> str:
         "iat": ahora,
         "exp": ahora + timedelta(minutes=settings.jwt_exp_min),
     }
+    if sid is not None:
+        payload["sid"] = sid
     return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_alg)
 
 

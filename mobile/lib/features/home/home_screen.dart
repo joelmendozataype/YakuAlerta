@@ -9,7 +9,7 @@ import '../../core/sync/sync_service.dart';
 import '../../core/theme.dart';
 import '../auth/login_screen.dart';
 import '../medicion/registro_screen.dart';
-import '../vincular_web/escaner_qr_screen.dart';
+import '../vincular_web/sesiones_screen.dart';
 
 /// Pantalla principal del operador: reservorios asignados, estado offline,
 /// cola de sincronización y últimas mediciones.
@@ -81,10 +81,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Vincular tablero web',
+            tooltip: 'Dispositivos vinculados',
             onPressed: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const EscanerQrScreen())),
-            icon: const Icon(Icons.qr_code_scanner),
+                MaterialPageRoute(builder: (_) => const SesionesScreen())),
+            icon: const Icon(Icons.devices_other),
           ),
           IconButton(onPressed: _salir, icon: const Icon(Icons.logout)),
         ],

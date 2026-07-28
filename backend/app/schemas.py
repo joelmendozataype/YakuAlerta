@@ -62,6 +62,15 @@ class QRConfirmarIn(BaseModel):
     aprobar: bool = True
 
 
+class SesionVinculadaOut(BaseModel):
+    """Dispositivo web vinculado y activo (listado de sesiones del usuario)."""
+    sesion_id: int
+    dispositivo: str
+    ip_origen: str | None = None
+    vinculado_en: datetime
+    es_sesion_actual: bool = False
+
+
 # ─── Territorio / entidades ──────────────────────────────────────
 class UbigeoOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)

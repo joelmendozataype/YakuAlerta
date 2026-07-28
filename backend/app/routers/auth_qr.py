@@ -32,12 +32,12 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..deps import usuario_actual
+from ..deps import sesion_actual_id, usuario_actual
 from ..enums import EstadoQR, RolUsuario
 from ..models import AsignacionOperador, Auditoria, Reservorio, SesionQR, Usuario
 from ..schemas import (
-    QRConfirmarIn, QREstadoOut, QRNuevaIn, QRNuevaOut, ReservorioOut, TokenOut,
-    UsuarioOut,
+    QRConfirmarIn, QREstadoOut, QRNuevaIn, QRNuevaOut, ReservorioOut,
+    SesionVinculadaOut, TokenOut, UsuarioOut,
 )
 from ..security import crear_token
 from ..timeutils import aware_utc
@@ -179,7 +179,94 @@ def reclamar(token: str, client_secret: str = Body(..., embed=True),
     db.commit()
 
     return TokenOut(
-        access_token=crear_token(usuario.usuario_id, usuario.rol.value, usuario.nombres),
+        # El sid ata el token a esta sesión: podrá revocarse desde la app.
+        access_token=crear_token(usuario.usuario_id, usuario.rol.value,
+                                 usuario.nombres, sid=sesion.sesion_qr_id),
         usuario=UsuarioOut.model_validate(usuario),
         reservorios=[ReservorioOut.model_validate(r) for r in reservorios],
     )
+
+
+# ═══════════════════════════════════════════════════════════════
+#  Dispositivos vinculados (gestión desde la app, patrón WhatsApp)
+# ═══════════════════════════════════════════════════════════════
+
+def _describir_dispositivo(user_agent: str | None) -> str:
+    """Convierte el user-agent en un nombre legible para el usuario."""
+    ua = (user_agent or "").lower()
+    navegador = next((n for c, n in [
+        ("edg/", "Edge"), ("chrome", "Chrome"), ("firefox", "Firefox"),
+        ("safari", "Safari"),
+    ] if c in ua), "Navegador")
+    sistema = next((s for c, s in [
+        ("windows", "Windows"), ("android", "Android"), ("iphone", "iPhone"),
+        ("ipad", "iPad"), ("mac os", "Mac"), ("linux", "Linux"),
+    ] if c in ua), "equipo desconocido")
+    return f"{navegador} en {sistema}"
+
+
+@router.get("/sesiones/activas", response_model=list[SesionVinculadaOut])
+def listar_sesiones(db: Session = Depends(get_db),
+                    usuario: Usuario = Depends(usuario_actual),
+                    sid: int | None = Depends(sesion_actual_id)):
+    """Dispositivos web vinculados y activos del usuario."""
+    filas = (
+        db.query(SesionQR)
+        .filter(SesionQR.usuario_id == usuario.usuario_id,
+                SesionQR.estado == EstadoQR.CONSUMIDA)
+        .order_by(SesionQR.resuelto_en.desc())
+        .all()
+    )
+    return [
+        SesionVinculadaOut(
+            sesion_id=s.sesion_qr_id,
+            dispositivo=_describir_dispositivo(s.user_agent),
+            ip_origen=s.ip_origen,
+            vinculado_en=s.resuelto_en or s.creado_en,
+            es_sesion_actual=(s.sesion_qr_id == sid),
+        )
+        for s in filas
+    ]
+
+
+@router.delete("/sesiones/activas/{sesion_id}", status_code=status.HTTP_200_OK)
+def cerrar_sesion(sesion_id: int, db: Session = Depends(get_db),
+                  usuario: Usuario = Depends(usuario_actual)):
+    """Cierra un dispositivo vinculado; su token deja de valer de inmediato."""
+    sesion = db.get(SesionQR, sesion_id)
+    if not sesion or sesion.usuario_id != usuario.usuario_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Sesión no encontrada")
+    if sesion.estado != EstadoQR.CONSUMIDA:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Esa sesión ya no está activa")
+
+    sesion.estado = EstadoQR.REVOCADA
+    db.add(Auditoria(
+        usuario_id=usuario.usuario_id, accion="QR_SESION_CERRADA",
+        entidad_afectada="sesion_qr", registro_id=str(sesion.sesion_qr_id),
+        detalle=f"Cierre de {_describir_dispositivo(sesion.user_agent)}",
+    ))
+    db.commit()
+    return {"cerradas": 1, "sesion_id": sesion_id}
+
+
+@router.delete("/sesiones/activas", status_code=status.HTTP_200_OK)
+def cerrar_todas(db: Session = Depends(get_db),
+                 usuario: Usuario = Depends(usuario_actual),
+                 sid: int | None = Depends(sesion_actual_id)):
+    """Cierra todos los dispositivos vinculados del usuario."""
+    filas = (
+        db.query(SesionQR)
+        .filter(SesionQR.usuario_id == usuario.usuario_id,
+                SesionQR.estado == EstadoQR.CONSUMIDA)
+        .all()
+    )
+    for s in filas:
+        s.estado = EstadoQR.REVOCADA
+    if filas:
+        db.add(Auditoria(
+            usuario_id=usuario.usuario_id, accion="QR_SESIONES_CERRADAS",
+            entidad_afectada="sesion_qr",
+            detalle=f"Cierre masivo de {len(filas)} dispositivo(s)",
+        ))
+    db.commit()
+    return {"cerradas": len(filas)}

@@ -61,5 +61,6 @@ class EstadoQR(str, enum.Enum):
     ESCANEADO = "ESCANEADO"    # la app lo leyó; espera confirmación del usuario
     APROBADO = "APROBADO"      # el usuario confirmó; la web puede reclamar el token
     RECHAZADO = "RECHAZADO"    # el usuario canceló desde la app
-    CONSUMIDA = "CONSUMIDA"    # la web ya reclamó la sesión (un solo uso)
+    CONSUMIDA = "CONSUMIDA"    # la web ya reclamó la sesión: dispositivo vinculado y activo
+    REVOCADA = "REVOCADA"      # el usuario cerró la sesión de ese dispositivo desde la app
     EXPIRADO = "EXPIRADO"      # venció el plazo sin completarse

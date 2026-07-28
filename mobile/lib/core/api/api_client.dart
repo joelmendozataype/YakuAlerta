@@ -104,6 +104,43 @@ class ApiClient {
     return ((jsonDecode(res.body) as Map<String, dynamic>)['estado'] ?? '') as String;
   }
 
+  /// Tableros web vinculados y activos de este usuario.
+  Future<List<SesionVinculada>> sesionesVinculadas() async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/auth/qr/sesiones/activas'),
+      headers: await _headers(),
+    );
+    if (res.statusCode != 200) {
+      throw ApiException(_detalle(res.body, 'No se pudieron cargar las sesiones'));
+    }
+    return (jsonDecode(res.body) as List)
+        .map((e) => SesionVinculada.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Cierra un tablero web vinculado: su acceso caduca de inmediato.
+  Future<void> cerrarSesionVinculada(int sesionId) async {
+    final res = await http.delete(
+      Uri.parse('$baseUrl/auth/qr/sesiones/activas/$sesionId'),
+      headers: await _headers(),
+    );
+    if (res.statusCode != 200) {
+      throw ApiException(_detalle(res.body, 'No se pudo cerrar la sesión'));
+    }
+  }
+
+  /// Cierra todos los tableros web vinculados. Devuelve cuántos se cerraron.
+  Future<int> cerrarTodasLasSesiones() async {
+    final res = await http.delete(
+      Uri.parse('$baseUrl/auth/qr/sesiones/activas'),
+      headers: await _headers(),
+    );
+    if (res.statusCode != 200) {
+      throw ApiException(_detalle(res.body, 'No se pudieron cerrar las sesiones'));
+    }
+    return ((jsonDecode(res.body) as Map<String, dynamic>)['cerradas'] ?? 0) as int;
+  }
+
   /// HU-08 (2ª fase): sube la foto de evidencia de una medición ya sincronizada.
   Future<void> subirEvidencia(
     String uuidMedicion,
@@ -154,4 +191,29 @@ class ApiException implements Exception {
   ApiException(this.mensaje);
   @override
   String toString() => mensaje;
+}
+
+/// Tablero web vinculado a esta cuenta mediante código QR.
+class SesionVinculada {
+  final int sesionId;
+  final String dispositivo;
+  final String? ipOrigen;
+  final DateTime vinculadoEn;
+  final bool esSesionActual;
+
+  const SesionVinculada({
+    required this.sesionId,
+    required this.dispositivo,
+    required this.vinculadoEn,
+    this.ipOrigen,
+    this.esSesionActual = false,
+  });
+
+  factory SesionVinculada.fromJson(Map<String, dynamic> j) => SesionVinculada(
+        sesionId: j['sesion_id'] as int,
+        dispositivo: (j['dispositivo'] ?? 'Equipo desconocido') as String,
+        ipOrigen: j['ip_origen'] as String?,
+        vinculadoEn: DateTime.parse(j['vinculado_en'] as String),
+        esSesionActual: (j['es_sesion_actual'] ?? false) as bool,
+      );
 }
