@@ -46,3 +46,6 @@ postgres_data/
 # IDEs
 .idea/
 .qodo/
+
+# PDFs de prueba generados localmente
+backend/aviso_*.pdf

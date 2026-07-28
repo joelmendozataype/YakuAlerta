@@ -14,7 +14,7 @@ from .config import settings
 from .database import SessionLocal
 from .routers import (
     admin, alertas, auth, auth_qr, evidencias, laboratorio, mediciones,
-    reportes, sync, tablero,
+    publico, reportes, sync, tablero,
 )
 from .services.silencio import verificar_silencio
 
@@ -67,7 +67,7 @@ app.add_middleware(
 )
 
 for r in (auth, auth_qr, admin, mediciones, sync, alertas, tablero, laboratorio,
-          reportes, evidencias):
+          reportes, evidencias, publico):
     app.include_router(r.router)
 
 

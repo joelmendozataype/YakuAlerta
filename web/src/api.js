@@ -47,6 +47,9 @@ export const api = {
   alerta: (id) => request(`/alertas/${id}`),
   cerrarAlerta: (id, payload) => request(`/alertas/${id}/cerrar`, { method: 'POST', body: payload }),
   silencio: () => request('/reportes/silencio'),
+  // Afiche comunitario imprimible con QR (para fijar en el punto de agua)
+  avisoComunitario: (comunidadId) =>
+    request(`/avisos/comunidad/${comunidadId}`, { blob: true }),
   // Trae la imagen de evidencia autenticada y devuelve un object URL para <img>.
   evidenciaObjectUrl: async (id) => {
     const blob = await request(`/evidencias/${id}`, { blob: true })

@@ -27,6 +27,21 @@ export default function Tablero() {
       .finally(() => setCargando(false))
   }, [ubigeoId])
 
+  // Descarga el afiche comunitario con QR para imprimir y fijar en el punto de agua.
+  async function descargarAviso(c) {
+    try {
+      const blob = await api.avisoComunitario(c.comunidad_id)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `aviso_${c.comunidad.toLowerCase().replace(/\s+/g, '_')}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      alert(`No se pudo generar el aviso: ${e.message}`)
+    }
+  }
+
   function verHistorial(c) {
     if (!c.reservorio_id) return
     setSel(c)
@@ -80,6 +95,7 @@ export default function Tablero() {
                   <th>Estado</th>
                   <th>Vía</th>
                   <th className="text-right">Última</th>
+                  <th className="text-right">Aviso</th>
                 </tr>
               </thead>
               <tbody>
@@ -105,6 +121,15 @@ export default function Tablero() {
                       {c.ultima_medicion
                         ? new Date(c.ultima_medicion).toLocaleDateString('es-PE')
                         : '—'}
+                    </td>
+                    <td className="text-right">
+                      <button
+                        title="Descargar el aviso para imprimir y fijar en el punto de agua"
+                        className="text-agua-700 hover:text-agua-900 px-2 py-1 rounded hover:bg-agua-50"
+                        onClick={(e) => { e.stopPropagation(); descargarAviso(c) }}
+                      >
+                        🖨️
+                      </button>
                     </td>
                   </tr>
                 ))}

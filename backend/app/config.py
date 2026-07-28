@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
     seed_demo: bool = True
 
+    # Dirección pública del servicio: es la que se codifica en el QR del aviso
+    # comunitario, de modo que cualquier vecino pueda consultar el estado.
+    public_base_url: str = "http://localhost:8000"
+
     @property
     def cors_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
