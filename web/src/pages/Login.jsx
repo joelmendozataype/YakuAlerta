@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth'
+import LoginQR from '../components/LoginQR'
 
 export default function Login() {
-  const { login } = useAuth()
+  const { login, establecerSesion } = useAuth()
   const navigate = useNavigate()
   const [telefono, setTelefono] = useState('987000020')
   const [clave, setClave] = useState('yaku2026')
@@ -24,53 +25,74 @@ export default function Login() {
     }
   }
 
+  // La app aprobó la vinculación: la sesión llega ya resuelta.
+  function onSesionQR(sesion) {
+    establecerSesion(sesion)
+    navigate('/')
+  }
+
   return (
-    <div className="min-h-screen grid md:grid-cols-2">
-      {/* Panel de marca */}
-      <div className="hidden md:flex flex-col justify-center gap-6 bg-agua-800 text-white p-12">
-        <div className="text-6xl">💧</div>
-        <h1 className="text-4xl font-bold">YakuAlerta</h1>
-        <p className="text-agua-100 text-lg max-w-md">
-          Alerta temprana para agua no segura en reservorios comunales de Huancavelica.
-          Del dato de campo a la acción sanitaria, en horas y no en semanas.
-        </p>
-        <div className="flex gap-3 text-sm">
-          <span className="badge bg-verde/20 text-verde-100">🟢 Segura</span>
-          <span className="badge bg-amarillo/20 text-amber-100">🟡 En riesgo</span>
-          <span className="badge bg-rojo/20 text-red-100">🔴 No segura</span>
+    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl">
+        {/* Marca */}
+        <div className="text-center mb-6">
+          <div className="text-4xl">💧</div>
+          <h1 className="mt-1 text-2xl font-bold text-agua-800">YakuAlerta</h1>
+          <p className="text-sm text-slate-500">Vigilancia del agua · Huancavelica</p>
         </div>
-      </div>
 
-      {/* Formulario */}
-      <div className="flex items-center justify-center p-8 bg-slate-100">
-        <form onSubmit={onSubmit} className="card w-full max-w-sm space-y-4">
-          <div className="md:hidden text-center text-4xl">💧</div>
-          <h2 className="text-xl font-bold text-slate-800">Tablero institucional</h2>
-          <p className="text-sm text-slate-500">Acceso para ATM, DIRESA/DESA y salud.</p>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="grid md:grid-cols-2">
+            {/* ── Acceso con celular y clave ── */}
+            <form onSubmit={onSubmit} className="p-8 md:p-10">
+              <h2 className="text-xl font-bold text-slate-800">Te damos la bienvenida</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Acceso para ATM, DIRESA/DESA y establecimientos de salud.
+              </p>
 
-          <div>
-            <label className="text-sm font-medium text-slate-600">Número de celular</label>
-            <input className="input mt-1" value={telefono} onChange={(e) => setTelefono(e.target.value)}
-              placeholder="9XXXXXXXX" required />
+              <div className="mt-6 space-y-4">
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Número de celular <span className="text-rojo">*</span>
+                  </label>
+                  <input className="input mt-1" value={telefono} inputMode="numeric"
+                    onChange={(e) => setTelefono(e.target.value)}
+                    placeholder="9XXXXXXXX" required />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Clave <span className="text-rojo">*</span>
+                  </label>
+                  <input className="input mt-1" type="password" value={clave}
+                    onChange={(e) => setClave(e.target.value)} required />
+                </div>
+              </div>
+
+              {error && (
+                <p className="mt-4 text-sm text-rojo bg-rojo/10 rounded-lg px-3 py-2">{error}</p>
+              )}
+
+              <button className="btn-primary w-full justify-center mt-6" disabled={cargando}>
+                {cargando ? 'Ingresando…' : 'Iniciar sesión'}
+              </button>
+
+              <div className="mt-6 border-t border-slate-100 pt-4 text-xs text-slate-400 space-y-0.5">
+                <p className="font-semibold text-slate-500">Cuentas demo · clave yaku2026</p>
+                <p>ATM 987000020 · Admin 987000099</p>
+                <p>DESA 987000030 · Salud 987000040</p>
+              </div>
+            </form>
+
+            {/* ── Acceso por QR ── */}
+            <div className="border-t md:border-t-0 md:border-l border-slate-200 bg-slate-50 p-8 md:p-10 flex items-center justify-center">
+              <LoginQR onSesion={onSesionQR} />
+            </div>
           </div>
-          <div>
-            <label className="text-sm font-medium text-slate-600">Clave</label>
-            <input className="input mt-1" type="password" value={clave}
-              onChange={(e) => setClave(e.target.value)} required />
-          </div>
+        </div>
 
-          {error && <p className="text-sm text-rojo bg-rojo/10 rounded-lg px-3 py-2">{error}</p>}
-
-          <button className="btn-primary w-full justify-center" disabled={cargando}>
-            {cargando ? 'Ingresando…' : 'Ingresar'}
-          </button>
-
-          <div className="text-xs text-slate-400 border-t pt-3 space-y-0.5">
-            <p className="font-medium text-slate-500">Cuentas demo:</p>
-            <p>ATM → 987000020 · Admin → 987000099</p>
-            <p>DESA → 987000030 · Salud → 987000040 · Clave: yaku2026</p>
-          </div>
-        </form>
+        <p className="text-center text-xs text-slate-400 mt-6">
+          YakuAlerta · Hackathon Kuska Wiñasun UNH 2026
+        </p>
       </div>
     </div>
   )

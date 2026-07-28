@@ -9,12 +9,16 @@ export function AuthProvider({ children }) {
     return raw ? JSON.parse(raw) : null
   })
 
-  async function login(telefono, clave) {
-    const data = await api.login(telefono, clave)
+  /** Persiste una sesión ya resuelta (login por clave o vinculación por QR). */
+  function establecerSesion(data) {
     localStorage.setItem('yaku_token', data.access_token)
     localStorage.setItem('yaku_user', JSON.stringify(data.usuario))
     setUser(data.usuario)
     return data.usuario
+  }
+
+  async function login(telefono, clave) {
+    return establecerSesion(await api.login(telefono, clave))
   }
 
   function logout() {
@@ -24,7 +28,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, establecerSesion }}>
       {children}
     </AuthContext.Provider>
   )

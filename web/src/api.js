@@ -35,6 +35,11 @@ async function request(path, { method = 'GET', body, blob = false } = {}) {
 export const api = {
   base: BASE,
   login: (telefono, clave) => request('/auth/login', { method: 'POST', body: { telefono, clave } }),
+  // ─── Inicio de sesión por QR (vinculación con la app) ───────
+  qrNueva: (clientHash) => request('/auth/qr/nueva', { method: 'POST', body: { client_hash: clientHash } }),
+  qrEstado: (token) => request(`/auth/qr/${token}`),
+  qrReclamar: (token, clientSecret) =>
+    request(`/auth/qr/${token}/reclamar`, { method: 'POST', body: { client_secret: clientSecret } }),
   distritos: () => request('/tablero/distritos'),
   tablero: (ubigeoId) => request(`/tablero/${ubigeoId}`),
   historial: (reservorioId) => request(`/tablero/reservorio/${reservorioId}/historial`),

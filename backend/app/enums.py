@@ -53,3 +53,13 @@ class EstadoNotif(str, enum.Enum):
 class DictamenLab(str, enum.Enum):
     CONFORME = "CONFORME"
     NO_CONFORME = "NO_CONFORME"
+
+
+class EstadoQR(str, enum.Enum):
+    """Ciclo de vida de una sesión de vinculación por código QR."""
+    PENDIENTE = "PENDIENTE"    # QR mostrado en la web, aún sin escanear
+    ESCANEADO = "ESCANEADO"    # la app lo leyó; espera confirmación del usuario
+    APROBADO = "APROBADO"      # el usuario confirmó; la web puede reclamar el token
+    RECHAZADO = "RECHAZADO"    # el usuario canceló desde la app
+    CONSUMIDA = "CONSUMIDA"    # la web ya reclamó la sesión (un solo uso)
+    EXPIRADO = "EXPIRADO"      # venció el plazo sin completarse

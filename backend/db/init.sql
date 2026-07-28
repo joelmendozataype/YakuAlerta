@@ -26,6 +26,7 @@ CREATE TYPE estado_alerta    AS ENUM ('ACTIVA','EN_PROCESO','CERRADA');
 CREATE TYPE canal_notif      AS ENUM ('SMS','WHATSAPP','APP');
 CREATE TYPE estado_notif     AS ENUM ('ENVIADO','ENTREGADO','FALLIDO');
 CREATE TYPE dictamen_lab     AS ENUM ('CONFORME','NO_CONFORME');
+CREATE TYPE estado_qr        AS ENUM ('PENDIENTE','ESCANEADO','APROBADO','RECHAZADO','CONSUMIDA','EXPIRADO');
 
 -- ---------------------------------------------------------------------------
 --  1. UBIGEO
@@ -254,6 +255,27 @@ CREATE TABLE reporte (
     CONSTRAINT fk_reporte_usuario
         FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id) ON DELETE RESTRICT
 );
+
+-- ---------------------------------------------------------------------------
+--  15. SESION_QR  (vinculación efímera web-movil, patrón WhatsApp/Discord Web)
+-- ---------------------------------------------------------------------------
+CREATE TABLE sesion_qr (
+    sesion_qr_id     BIGSERIAL    PRIMARY KEY,
+    token            VARCHAR(64)  NOT NULL UNIQUE,      -- secreto público del QR
+    client_hash      VARCHAR(64)  NOT NULL,             -- SHA-256 del secreto del navegador
+    estado           estado_qr    NOT NULL DEFAULT 'PENDIENTE',
+    usuario_id       INT,                               -- quien escanea y autoriza
+    creado_en        TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    expira_en        TIMESTAMPTZ  NOT NULL,
+    escaneado_en     TIMESTAMPTZ,
+    resuelto_en      TIMESTAMPTZ,
+    ip_origen        VARCHAR(45),
+    user_agent       VARCHAR(255),
+    CONSTRAINT fk_sesionqr_usuario
+        FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id) ON DELETE CASCADE
+);
+CREATE INDEX idx_sesionqr_token  ON sesion_qr(token);
+CREATE INDEX idx_sesionqr_estado ON sesion_qr(estado);
 
 -- ---------------------------------------------------------------------------
 --  14. AUDITORIA

@@ -6,7 +6,7 @@ from datetime import date, datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from .enums import (
-    CanalNotif, DictamenLab, EstadoAlerta, EstadoNotif, EstadoSync,
+    CanalNotif, DictamenLab, EstadoAlerta, EstadoNotif, EstadoQR, EstadoSync,
     MetodoLectura, NivelRiesgo, RolUsuario,
 )
 
@@ -34,6 +34,32 @@ class TokenOut(BaseModel):
     token_type: str = "bearer"
     usuario: UsuarioOut
     reservorios: list[ReservorioOut] = []
+
+
+# ─── Login por QR (vinculación web ↔ móvil) ─────────────────────
+class QRNuevaIn(BaseModel):
+    client_hash: str = Field(
+        min_length=16, max_length=64,
+        description="SHA-256 del secreto que el navegador guarda en memoria",
+    )
+
+
+class QRNuevaOut(BaseModel):
+    token: str
+    contenido_qr: str = Field(description="Cadena a codificar en el código QR")
+    expira_en_seg: int
+
+
+class QREstadoOut(BaseModel):
+    estado: EstadoQR
+    # Solo viaja cuando el estado es APROBADO y el cliente presenta su secreto.
+    sesion: TokenOut | None = None
+    # Datos mostrados en la web mientras se espera la confirmación.
+    usuario_nombres: str | None = None
+
+
+class QRConfirmarIn(BaseModel):
+    aprobar: bool = True
 
 
 # ─── Territorio / entidades ──────────────────────────────────────

@@ -218,6 +218,29 @@ class Reporte(Base):
     fecha_generacion: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class SesionQR(Base):
+    """Vinculación efímera web↔móvil por código QR (patrón WhatsApp/Discord Web).
+
+    El ``token`` es el secreto público que viaja en el QR. El ``client_hash``
+    ata la sesión al navegador que la generó: solo quien conserva el secreto de
+    cliente original puede reclamar el acceso, aunque un tercero fotografíe el QR.
+    """
+    __tablename__ = "sesion_qr"
+    sesion_qr_id: Mapped[int] = mapped_column(BigIntPK, primary_key=True)
+    token: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    client_hash: Mapped[str] = mapped_column(String(64))
+    estado: Mapped[enums.EstadoQR] = mapped_column(
+        pg_enum(enums.EstadoQR, "estado_qr"), default=enums.EstadoQR.PENDIENTE)
+    usuario_id: Mapped[int | None] = mapped_column(ForeignKey("usuario.usuario_id"))
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expira_en: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    escaneado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    resuelto_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ip_origen: Mapped[str | None] = mapped_column(String(45))
+    user_agent: Mapped[str | None] = mapped_column(String(255))
+    usuario: Mapped["Usuario"] = relationship()
+
+
 class Auditoria(Base):
     __tablename__ = "auditoria"
     auditoria_id: Mapped[int] = mapped_column(BigIntPK, primary_key=True)

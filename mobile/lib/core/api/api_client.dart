@@ -78,6 +78,32 @@ class ApiClient {
     return jsonDecode(res.body) as Map<String, dynamic>;
   }
 
+  /// Vinculación del tablero web: informa que este dispositivo leyó el código.
+  /// Devuelve el nombre del usuario con el que se iniciará la sesión.
+  Future<String?> qrEscanear(String token) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/auth/qr/$token/escanear'),
+      headers: await _headers(),
+    );
+    if (res.statusCode != 200) {
+      throw ApiException(_detalle(res.body, 'El código no es válido o ya expiró'));
+    }
+    return (jsonDecode(res.body) as Map<String, dynamic>)['usuario_nombres'] as String?;
+  }
+
+  /// Confirma o cancela la vinculación del tablero web.
+  Future<String> qrConfirmar(String token, {required bool aprobar}) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/auth/qr/$token/confirmar'),
+      headers: await _headers(),
+      body: jsonEncode({'aprobar': aprobar}),
+    );
+    if (res.statusCode != 200) {
+      throw ApiException(_detalle(res.body, 'No se pudo confirmar la vinculación'));
+    }
+    return ((jsonDecode(res.body) as Map<String, dynamic>)['estado'] ?? '') as String;
+  }
+
   /// HU-08 (2ª fase): sube la foto de evidencia de una medición ya sincronizada.
   Future<void> subirEvidencia(
     String uuidMedicion,
