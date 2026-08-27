@@ -279,6 +279,23 @@ CREATE INDEX idx_sesionqr_token  ON sesion_qr(token);
 CREATE INDEX idx_sesionqr_estado ON sesion_qr(estado);
 
 -- ---------------------------------------------------------------------------
+--  16. RECUPERACION_CLAVE  (código de un solo uso enviado por SMS)
+-- ---------------------------------------------------------------------------
+CREATE TABLE recuperacion_clave (
+    recuperacion_id  BIGSERIAL    PRIMARY KEY,
+    usuario_id       INT          NOT NULL,
+    codigo_hash      VARCHAR(255) NOT NULL,      -- el código se guarda cifrado
+    expira_en        TIMESTAMPTZ  NOT NULL,
+    intentos         INT          NOT NULL DEFAULT 0,
+    usado            BOOLEAN      NOT NULL DEFAULT FALSE,
+    creado_en        TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    ip_origen        VARCHAR(45),
+    CONSTRAINT fk_recuperacion_usuario
+        FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id) ON DELETE CASCADE
+);
+CREATE INDEX idx_recuperacion_usuario ON recuperacion_clave(usuario_id);
+
+-- ---------------------------------------------------------------------------
 --  14. AUDITORIA
 -- ---------------------------------------------------------------------------
 CREATE TABLE auditoria (

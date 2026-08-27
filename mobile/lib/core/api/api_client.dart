@@ -110,6 +110,63 @@ class ApiClient {
     return ((jsonDecode(res.body) as Map<String, dynamic>)['estado'] ?? '') as String;
   }
 
+  /// Resumen del distrito para la vista de la ATM.
+  Future<Map<String, dynamic>> tablero(int ubigeoId) async {
+    final res = await http.get(Uri.parse('$baseUrl/tablero/$ubigeoId'),
+        headers: await _headers());
+    if (res.statusCode != 200) {
+      throw ApiException(_detalle(res.body, 'No se pudo cargar el distrito'));
+    }
+    return jsonDecode(res.body) as Map<String, dynamic>;
+  }
+
+  /// Alertas abiertas de la jurisdicción del usuario (el servidor las filtra).
+  Future<List<dynamic>> alertasActivas() async {
+    final res = await http.get(Uri.parse('$baseUrl/alertas?estado=ACTIVA'),
+        headers: await _headers());
+    if (res.statusCode != 200) {
+      throw ApiException(_detalle(res.body, 'No se pudieron cargar las alertas'));
+    }
+    return jsonDecode(res.body) as List<dynamic>;
+  }
+
+  /// Estado del agua de una comunidad en lenguaje llano (vista de población).
+  Future<Map<String, dynamic>> estadoPublico(int comunidadId) async {
+    final res = await http.get(
+        Uri.parse('$baseUrl/publico/comunidad/$comunidadId/estado'),
+        headers: await _headers());
+    if (res.statusCode != 200) {
+      throw ApiException(_detalle(res.body, 'No se pudo consultar el estado'));
+    }
+    return jsonDecode(res.body) as Map<String, dynamic>;
+  }
+
+  /// Solicita el código de recuperación; el servidor lo envía por SMS.
+  Future<Map<String, dynamic>> solicitarRecuperacion(String dni) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/auth/recuperacion/solicitar'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'dni': dni}),
+    );
+    if (res.statusCode != 200) {
+      throw ApiException(_detalle(res.body, 'No se pudo enviar el código'));
+    }
+    return jsonDecode(res.body) as Map<String, dynamic>;
+  }
+
+  /// Confirma el código recibido y establece la clave nueva.
+  Future<void> confirmarRecuperacion(
+      String dni, String codigo, String claveNueva) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/auth/recuperacion/confirmar'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'dni': dni, 'codigo': codigo, 'clave_nueva': claveNueva}),
+    );
+    if (res.statusCode != 200) {
+      throw ApiException(_detalle(res.body, 'No se pudo cambiar la clave'));
+    }
+  }
+
   /// Tableros web vinculados y activos de este usuario.
   Future<List<SesionVinculada>> sesionesVinculadas() async {
     final res = await http.get(

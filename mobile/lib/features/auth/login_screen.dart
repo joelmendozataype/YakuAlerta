@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/theme.dart';
-import '../home/home_screen.dart';
+import '../roles/inicio_por_rol.dart';
+import 'recuperar_clave_screen.dart';
 
 /// Grupo de rol que el usuario elige antes de ingresar.
 ///
@@ -77,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        MaterialPageRoute(builder: (_) => const InicioPorRol()),
       );
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.mensaje);
@@ -87,22 +88,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _recuperarClave() {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Recuperar tu clave'),
-        content: const Text(
-          'Por seguridad, la clave se restablece de forma presencial.\n\n'
-          'Acércate al Área Técnica Municipal (ATM) de tu distrito con tu DNI '
-          'y solicita el restablecimiento. Te entregarán una clave nueva.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Entendido'),
-          ),
-        ],
-      ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const RecuperarClaveScreen()),
     );
   }
 

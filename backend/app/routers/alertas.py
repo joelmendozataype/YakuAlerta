@@ -49,6 +49,20 @@ def listar_alertas(estado: EstadoAlerta | None = EstadoAlerta.ACTIVA,
     q = db.query(Alerta).order_by(Alerta.fecha_generacion.desc())
     if estado:
         q = q.filter(Alerta.estado == estado)
+
+    # Cada quien ve las alertas de su jurisdicción: la comunidad para los
+    # perfiles comunales, el distrito para la ATM y salud. Sin ámbito
+    # declarado (DESA, DRVCS, administrador) el alcance es regional.
+    if usuario.comunidad_id is not None:
+        q = (q.join(Medicion, Alerta.medicion_id == Medicion.medicion_id)
+              .join(Reservorio, Medicion.reservorio_id == Reservorio.reservorio_id)
+              .filter(Reservorio.comunidad_id == usuario.comunidad_id))
+    elif usuario.ubigeo_id is not None:
+        q = (q.join(Medicion, Alerta.medicion_id == Medicion.medicion_id)
+              .join(Reservorio, Medicion.reservorio_id == Reservorio.reservorio_id)
+              .join(Comunidad, Reservorio.comunidad_id == Comunidad.comunidad_id)
+              .filter(Comunidad.ubigeo_id == usuario.ubigeo_id))
+
     return [_to_out(db, a) for a in q.all()]
 
 

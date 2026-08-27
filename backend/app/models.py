@@ -244,6 +244,25 @@ class SesionQR(Base):
     usuario: Mapped["Usuario"] = relationship()
 
 
+class RecuperacionClave(Base):
+    """Código de un solo uso para restablecer la clave (HU-01, RNF-05).
+
+    El código viaja por SMS al celular registrado y **se guarda cifrado**: si
+    alguien leyera la base de datos no podría usarlo. Vence a los 10 minutos y
+    admite un número acotado de intentos.
+    """
+    __tablename__ = "recuperacion_clave"
+    recuperacion_id: Mapped[int] = mapped_column(BigIntPK, primary_key=True)
+    usuario_id: Mapped[int] = mapped_column(ForeignKey("usuario.usuario_id"))
+    codigo_hash: Mapped[str] = mapped_column(String(255))
+    expira_en: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    intentos: Mapped[int] = mapped_column(Integer, default=0)
+    usado: Mapped[bool] = mapped_column(Boolean, default=False)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    ip_origen: Mapped[str | None] = mapped_column(String(45))
+    usuario: Mapped["Usuario"] = relationship()
+
+
 class Auditoria(Base):
     __tablename__ = "auditoria"
     auditoria_id: Mapped[int] = mapped_column(BigIntPK, primary_key=True)

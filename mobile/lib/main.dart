@@ -5,7 +5,7 @@ import 'core/notificaciones/recordatorio_service.dart';
 import 'core/sync/sync_service.dart';
 import 'core/theme.dart';
 import 'features/auth/login_screen.dart';
-import 'features/home/home_screen.dart';
+import 'features/roles/inicio_por_rol.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,7 +52,7 @@ class _ArranqueState extends State<_Arranque> {
         if (!snap.hasData) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
-        return snap.data! ? const HomeScreen() : const LoginScreen();
+        return snap.data! ? const InicioPorRol() : const LoginScreen();
       },
     );
   }

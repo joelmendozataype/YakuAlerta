@@ -48,6 +48,24 @@ class UsuarioOut(BaseModel):
     activo: bool = True
 
 
+# ─── Recuperación de clave ──────────────────────────────────────
+class RecuperacionSolicitarIn(BaseModel):
+    dni: str = Field(examples=["70100001"], min_length=8, max_length=8)
+
+
+class RecuperacionSolicitarOut(BaseModel):
+    """Respuesta deliberadamente uniforme: no revela si el DNI existe."""
+    mensaje: str
+    telefono_enmascarado: str | None = None
+    vigencia_min: int = 10
+
+
+class RecuperacionConfirmarIn(BaseModel):
+    dni: str = Field(min_length=8, max_length=8)
+    codigo: str = Field(min_length=6, max_length=6, examples=["482913"])
+    clave_nueva: str = Field(min_length=6, max_length=72)
+
+
 class TokenOut(BaseModel):
     access_token: str
     token_type: str = "bearer"

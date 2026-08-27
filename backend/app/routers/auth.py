@@ -6,7 +6,11 @@ from ..database import get_db
 from ..deps import usuario_actual
 from ..enums import ROLES_POR_GRUPO, RolUsuario, grupo_de_rol
 from ..models import Auditoria, AsignacionOperador, Reservorio, Usuario
-from ..schemas import LoginIn, ReservorioOut, TokenOut, UsuarioOut
+from ..schemas import (
+    LoginIn, RecuperacionConfirmarIn, RecuperacionSolicitarIn,
+    RecuperacionSolicitarOut, ReservorioOut, TokenOut, UsuarioOut,
+)
+from ..services import recuperacion
 from ..security import crear_token, verificar_clave
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -65,3 +69,45 @@ def login(datos: LoginIn, request: Request, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UsuarioOut)
 def me(usuario: Usuario = Depends(usuario_actual)):
     return UsuarioOut.model_validate(usuario)
+
+
+# ═══════════════════════════════════════════════════════════════
+#  Recuperación de clave por código SMS
+# ═══════════════════════════════════════════════════════════════
+
+@router.post("/recuperacion/solicitar", response_model=RecuperacionSolicitarOut)
+def solicitar_recuperacion(datos: RecuperacionSolicitarIn, request: Request,
+                           db: Session = Depends(get_db)):
+    """Envía un código de un solo uso al celular registrado del usuario.
+
+    La respuesta es la misma exista o no el DNI: así nadie puede averiguar qué
+    documentos están registrados en el sistema.
+    """
+    ip = request.client.host if request.client else None
+    enmascarado = recuperacion.solicitar(db, datos.dni, ip)
+    db.add(Auditoria(accion="RECUPERACION_SOLICITADA", entidad_afectada="usuario",
+                     registro_id=datos.dni, ip_origen=ip))
+    db.commit()
+    return RecuperacionSolicitarOut(
+        mensaje=("Si el DNI está registrado, enviamos un código por mensaje de "
+                 "texto al celular asociado."),
+        telefono_enmascarado=enmascarado,
+        vigencia_min=recuperacion.VIGENCIA_MIN,
+    )
+
+
+@router.post("/recuperacion/confirmar")
+def confirmar_recuperacion(datos: RecuperacionConfirmarIn, request: Request,
+                           db: Session = Depends(get_db)):
+    """Valida el código recibido y establece la clave nueva."""
+    try:
+        usuario = recuperacion.confirmar(db, datos.dni, datos.codigo, datos.clave_nueva)
+    except recuperacion.ErrorRecuperacion as e:
+        db.commit()   # conserva el conteo de intentos fallidos
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+
+    db.add(Auditoria(usuario_id=usuario.usuario_id, accion="CLAVE_RESTABLECIDA",
+                     entidad_afectada="usuario", registro_id=str(usuario.usuario_id),
+                     ip_origen=request.client.host if request.client else None))
+    db.commit()
+    return {"mensaje": "Su clave fue actualizada. Ya puede ingresar."}
