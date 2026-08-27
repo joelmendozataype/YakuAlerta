@@ -3,24 +3,43 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .enums import (
     CanalNotif, DictamenLab, EstadoAlerta, EstadoNotif, EstadoQR, EstadoSync,
-    MetodoLectura, NivelRiesgo, RolUsuario,
+    GrupoRol, MetodoLectura, NivelRiesgo, RolUsuario,
 )
 
 
 # ─── Auth ────────────────────────────────────────────────────────
 class LoginIn(BaseModel):
-    telefono: str = Field(examples=["987654321"])
+    """Credenciales de acceso.
+
+    Desde la app se ingresa con **DNI** y el grupo de rol elegido; el tablero
+    web mantiene el acceso por celular. Debe venir uno de los dos identificadores.
+    """
     clave: str = Field(examples=["yaku2026"])
+    dni: str | None = Field(default=None, examples=["70123456"])
+    telefono: str | None = Field(default=None, examples=["987654321"])
+    grupo_rol: GrupoRol | None = Field(
+        default=None,
+        description="Grupo elegido en la app; debe coincidir con el rol de la cuenta",
+    )
+
+    @model_validator(mode="after")
+    def _exige_identificador(self):
+        if not self.dni and not self.telefono:
+            raise ValueError("Indique su DNI o su número de celular")
+        if self.dni and not (self.dni.isdigit() and len(self.dni) == 8):
+            raise ValueError("El DNI debe tener 8 dígitos")
+        return self
 
 
 class UsuarioOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     usuario_id: int
     nombres: str
+    dni: str | None = None
     telefono: str
     rol: RolUsuario
     entidad: str | None = None
@@ -110,6 +129,7 @@ class ReservorioOut(ReservorioIn):
 
 class UsuarioIn(BaseModel):
     nombres: str
+    dni: str | None = None
     telefono: str
     clave: str
     rol: RolUsuario

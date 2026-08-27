@@ -15,6 +15,19 @@ class RolUsuario(str, enum.Enum):
     POBLACION = "POBLACION"               # contacto comunitario (difusión a la población)
 
 
+class GrupoRol(str, enum.Enum):
+    """Grupos de rol que el usuario elige al ingresar desde la app.
+
+    Agrupan los roles internos en las cuatro categorías que reconoce la gente
+    en campo. Los perfiles regionales (DESA, DRVCS) y el administrador operan
+    desde el tablero web, por lo que no se ofrecen en el móvil.
+    """
+    JASS = "JASS"                   # Vigilancia del agua
+    ATM = "ATM"                     # Autoridad local
+    IPRESS_SALUD = "IPRESS_SALUD"   # Establecimiento de salud
+    USUARIO = "USUARIO"             # Población usuaria
+
+
 class NivelRiesgo(str, enum.Enum):
     VERDE = "VERDE"
     AMARILLO = "AMARILLO"
@@ -64,3 +77,20 @@ class EstadoQR(str, enum.Enum):
     CONSUMIDA = "CONSUMIDA"    # la web ya reclamó la sesión: dispositivo vinculado y activo
     REVOCADA = "REVOCADA"      # el usuario cerró la sesión de ese dispositivo desde la app
     EXPIRADO = "EXPIRADO"      # venció el plazo sin completarse
+
+
+# ── Correspondencia grupo (lo que elige el usuario) → roles internos ──
+ROLES_POR_GRUPO: dict[GrupoRol, tuple[RolUsuario, ...]] = {
+    GrupoRol.JASS: (RolUsuario.OPERADOR, RolUsuario.DIRECTIVO_JASS),
+    GrupoRol.ATM: (RolUsuario.ATM, RolUsuario.AUTORIDAD_LOCAL),
+    GrupoRol.IPRESS_SALUD: (RolUsuario.SALUD,),
+    GrupoRol.USUARIO: (RolUsuario.POBLACION,),
+}
+
+
+def grupo_de_rol(rol: RolUsuario) -> GrupoRol | None:
+    """Grupo al que pertenece un rol interno (None si no se ofrece en la app)."""
+    for grupo, roles in ROLES_POR_GRUPO.items():
+        if rol in roles:
+            return grupo
+    return None

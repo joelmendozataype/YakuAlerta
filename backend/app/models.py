@@ -77,6 +77,9 @@ class Usuario(Base):
     __tablename__ = "usuario"
     usuario_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     nombres: Mapped[str] = mapped_column(String(120))
+    # Identificador de acceso desde la app: el DNI no cambia aunque el
+    # operador cambie de número de celular, algo frecuente en zona rural.
+    dni: Mapped[str | None] = mapped_column(String(8), unique=True, index=True)
     telefono: Mapped[str] = mapped_column(String(15), unique=True)
     clave_hash: Mapped[str] = mapped_column(String(255))
     rol: Mapped[enums.RolUsuario] = mapped_column(pg_enum(enums.RolUsuario, "rol_usuario"))

@@ -103,25 +103,25 @@ def sembrar() -> None:
             reservorios[nombre] = r
 
         # ── Usuarios (todos los roles) ──────────────────────────
-        #  (nombres, teléfono, rol, entidad, comunidad, ámbito distrital)
+        #  (nombres, DNI, teléfono, rol, entidad, comunidad, ámbito distrital)
         ub = ubigeo.ubigeo_id
         cid = lambda n: comunidades[n].comunidad_id  # noqa: E731
         usuarios_def = [
-            ("Máximo Quispe (operador)", "987000001", RolUsuario.OPERADOR, "JASS Chocce", cid("Chocce"), ub),
-            ("Rosa Huamán (operador)", "987000002", RolUsuario.OPERADOR, "JASS Ahuaycha", cid("Ahuaycha"), ub),
-            ("Directivo JASS Chocce", "987000010", RolUsuario.DIRECTIVO_JASS, "JASS Chocce", cid("Chocce"), ub),
-            ("Ing. Pazos (ATM)", "987000020", RolUsuario.ATM, "Municipalidad de Pampas", None, ub),
-            ("Esp. Ccora (DESA)", "987000030", RolUsuario.DESA, "DIRESA Huancavelica", None, None),
-            ("Tec. Salud Pampas", "987000040", RolUsuario.SALUD, "C.S. Pampas", None, ub),
-            ("Teniente gobernador Chocce", "987000050", RolUsuario.AUTORIDAD_LOCAL, "Autoridad comunal", cid("Chocce"), ub),
-            ("Promotor comunal Chocce", "987000060", RolUsuario.POBLACION, "Difusión a la población", cid("Chocce"), ub),
-            ("Promotor comunal Ahuaycha", "987000061", RolUsuario.POBLACION, "Difusión a la población", cid("Ahuaycha"), ub),
-            ("Esp. Saneamiento (DRVCS)", "987000070", RolUsuario.DRVCS, "Dir. Reg. Vivienda y Saneamiento", None, None),
-            ("Administrador", "987000099", RolUsuario.ADMIN, "YakuAlerta", None, None),
+            ("Máximo Quispe (operador)", "70100001", "987000001", RolUsuario.OPERADOR, "JASS Chocce", cid("Chocce"), ub),
+            ("Rosa Huamán (operador)", "70100002", "987000002", RolUsuario.OPERADOR, "JASS Ahuaycha", cid("Ahuaycha"), ub),
+            ("Directivo JASS Chocce", "70100010", "987000010", RolUsuario.DIRECTIVO_JASS, "JASS Chocce", cid("Chocce"), ub),
+            ("Ing. Pazos (ATM)", "70100020", "987000020", RolUsuario.ATM, "Municipalidad de Pampas", None, ub),
+            ("Esp. Ccora (DESA)", "70100030", "987000030", RolUsuario.DESA, "DIRESA Huancavelica", None, None),
+            ("Tec. Salud Pampas", "70100040", "987000040", RolUsuario.SALUD, "C.S. Pampas", None, ub),
+            ("Teniente gobernador Chocce", "70100050", "987000050", RolUsuario.AUTORIDAD_LOCAL, "Autoridad comunal", cid("Chocce"), ub),
+            ("Promotor comunal Chocce", "70100060", "987000060", RolUsuario.POBLACION, "Difusión a la población", cid("Chocce"), ub),
+            ("Promotor comunal Ahuaycha", "70100061", "987000061", RolUsuario.POBLACION, "Difusión a la población", cid("Ahuaycha"), ub),
+            ("Esp. Saneamiento (DRVCS)", "70100070", "987000070", RolUsuario.DRVCS, "Dir. Reg. Vivienda y Saneamiento", None, None),
+            ("Administrador", "70100099", "987000099", RolUsuario.ADMIN, "YakuAlerta", None, None),
         ]
         usuarios = {}
-        for nombres, tel, rol, entidad, com_id, ubi_id in usuarios_def:
-            u = Usuario(nombres=nombres, telefono=tel, clave_hash=hash_clave(CLAVE_DEMO),
+        for nombres, dni, tel, rol, entidad, com_id, ubi_id in usuarios_def:
+            u = Usuario(nombres=nombres, dni=dni, telefono=tel, clave_hash=hash_clave(CLAVE_DEMO),
                         rol=rol, entidad=entidad, comunidad_id=com_id, ubigeo_id=ubi_id)
             db.add(u)
             db.flush()
@@ -164,7 +164,7 @@ def sembrar() -> None:
                  len(comunidades), len(usuarios))
         log.info("   Login tablero → ATM: 987000020 / %s  ·  Admin: 987000099 / %s",
                  CLAVE_DEMO, CLAVE_DEMO)
-        log.info("   Login app (operador) → 987000001 / %s", CLAVE_DEMO)
+        log.info("   Login app (operador) → DNI 70100001 / %s", CLAVE_DEMO)
     except Exception:
         db.rollback()
         raise

@@ -80,6 +80,7 @@ CREATE TABLE reservorio (
 CREATE TABLE usuario (
     usuario_id       SERIAL       PRIMARY KEY,
     nombres          VARCHAR(120) NOT NULL,
+    dni              CHAR(8)      UNIQUE,                  -- identificador de acceso desde la app
     telefono         VARCHAR(15)  NOT NULL UNIQUE,
     clave_hash       VARCHAR(255) NOT NULL,
     rol              rol_usuario  NOT NULL,

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..deps import usuario_actual
-from ..enums import RolUsuario
+from ..enums import ROLES_POR_GRUPO, RolUsuario, grupo_de_rol
 from ..models import Auditoria, AsignacionOperador, Reservorio, Usuario
 from ..schemas import LoginIn, ReservorioOut, TokenOut, UsuarioOut
 from ..security import crear_token, verificar_clave
@@ -14,11 +14,29 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login", response_model=TokenOut)
 def login(datos: LoginIn, request: Request, db: Session = Depends(get_db)):
-    usuario = db.query(Usuario).filter(Usuario.telefono == datos.telefono).first()
+    # El acceso desde la app es por DNI; el tablero web mantiene el celular.
+    if datos.dni:
+        usuario = db.query(Usuario).filter(Usuario.dni == datos.dni).first()
+        etiqueta = "DNI"
+    else:
+        usuario = db.query(Usuario).filter(Usuario.telefono == datos.telefono).first()
+        etiqueta = "Celular"
+
     if not usuario or not verificar_clave(datos.clave, usuario.clave_hash):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Celular o clave incorrectos")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, f"{etiqueta} o clave incorrectos")
     if not usuario.activo:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Usuario inactivo")
+
+    # El rol elegido en la app debe corresponder al de la cuenta: evita que
+    # alguien ingrese por una puerta que no le toca y ve funciones ajenas.
+    if datos.grupo_rol is not None:
+        if usuario.rol not in ROLES_POR_GRUPO.get(datos.grupo_rol, ()):
+            propio = grupo_de_rol(usuario.rol)
+            sugerencia = f" Seleccione «{propio.value}»." if propio else ""
+            raise HTTPException(
+                status.HTTP_403_FORBIDDEN,
+                f"Su cuenta no corresponde al rol seleccionado.{sugerencia}",
+            )
 
     db.add(Auditoria(
         usuario_id=usuario.usuario_id, accion="LOGIN", entidad_afectada="usuario",

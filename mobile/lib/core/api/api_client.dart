@@ -50,11 +50,17 @@ class ApiClient {
       };
 
   /// HU-01: login. La sesión persiste en el dispositivo (acceso sin red luego).
-  Future<Map<String, dynamic>> login(String telefono, String clave) async {
+  /// El acceso desde la app es por DNI y el grupo de rol elegido: el DNI no
+  /// cambia aunque el operador cambie de número de celular.
+  Future<Map<String, dynamic>> login(
+    String dni,
+    String clave, {
+    required String grupoRol,
+  }) async {
     final res = await http.post(
       Uri.parse('$baseUrl/auth/login'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'telefono': telefono, 'clave': clave}),
+      body: jsonEncode({'dni': dni, 'clave': clave, 'grupo_rol': grupoRol}),
     );
     if (res.statusCode != 200) {
       throw ApiException(_detalle(res.body, 'Credenciales incorrectas'));
