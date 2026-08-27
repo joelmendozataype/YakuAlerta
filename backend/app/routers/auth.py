@@ -11,6 +11,7 @@ from ..schemas import (
     RecuperacionSolicitarOut, ReservorioOut, TokenOut, UsuarioOut,
 )
 from ..services import recuperacion
+from ..services.perfil import perfil_de
 from ..security import crear_token, verificar_clave
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -61,7 +62,7 @@ def login(datos: LoginIn, request: Request, db: Session = Depends(get_db)):
 
     return TokenOut(
         access_token=crear_token(usuario.usuario_id, usuario.rol.value, usuario.nombres),
-        usuario=UsuarioOut.model_validate(usuario),
+        usuario=perfil_de(db, usuario),
         reservorios=[ReservorioOut.model_validate(r) for r in reservorios],
     )
 

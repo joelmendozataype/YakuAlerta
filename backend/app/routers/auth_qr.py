@@ -39,6 +39,7 @@ from ..schemas import (
     QRConfirmarIn, QREstadoOut, QRNuevaIn, QRNuevaOut, ReservorioOut,
     SesionVinculadaOut, TokenOut, UsuarioOut,
 )
+from ..services.perfil import perfil_de
 from ..security import crear_token
 from ..timeutils import aware_utc
 
@@ -182,7 +183,7 @@ def reclamar(token: str, client_secret: str = Body(..., embed=True),
         # El sid ata el token a esta sesión: podrá revocarse desde la app.
         access_token=crear_token(usuario.usuario_id, usuario.rol.value,
                                  usuario.nombres, sid=sesion.sesion_qr_id),
-        usuario=UsuarioOut.model_validate(usuario),
+        usuario=perfil_de(db, usuario),
         reservorios=[ReservorioOut.model_validate(r) for r in reservorios],
     )
 

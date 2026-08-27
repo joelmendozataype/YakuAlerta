@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../db/local_db.dart';
+import '../models/reservorio.dart';
+
 /// Cliente REST del backend YakuAlerta.
 ///
 /// La URL base apunta por defecto al emulador Android (10.0.2.2 = localhost
@@ -68,6 +71,15 @@ class ApiClient {
     final data = jsonDecode(res.body) as Map<String, dynamic>;
     await _guardarSesion(data['access_token'] as String,
         data['usuario'] as Map<String, dynamic>);
+
+    // Los reservorios asignados viajan con la sesión: se guardan en la base
+    // local para que el operador pueda medir aunque luego se quede sin señal.
+    final asignados = (data['reservorios'] as List?) ?? const [];
+    await LocalDb.instance.guardarReservorios(
+      asignados
+          .map((r) => Reservorio.fromJson(r as Map<String, dynamic>))
+          .toList(),
+    );
     return data;
   }
 

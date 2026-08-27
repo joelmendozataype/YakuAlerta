@@ -45,6 +45,11 @@ class UsuarioOut(BaseModel):
     entidad: str | None = None
     ubigeo_id: int | None = None
     comunidad_id: int | None = None
+    # Territorio al que pertenece, para encabezar las pantallas de la app.
+    departamento: str | None = None
+    provincia: str | None = None
+    distrito: str | None = None
+    comunidad: str | None = None
     activo: bool = True
 
 

@@ -67,6 +67,35 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
   }
 
+
+  /// Territorio del operador: ubica la vigilancia en su provincia y distrito.
+  Widget _encabezadoTerritorio() {
+    final provincia = _usuario?['provincia'] as String?;
+    final distrito = _usuario?['distrito'] as String?;
+    if (provincia == null && distrito == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (provincia != null)
+            Text('Provincia ${_capitalizar(provincia)}',
+                style: const TextStyle(
+                    fontSize: 17, fontWeight: FontWeight.bold)),
+          if (distrito != null)
+            Text('Distrito ${_capitalizar(distrito)}',
+                style: const TextStyle(
+                    fontSize: 17, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  /// «ANGARAES» se lee mejor como «Angaraes» dentro de una frase.
+  String _capitalizar(String texto) => texto.isEmpty
+      ? texto
+      : texto[0].toUpperCase() + texto.substring(1).toLowerCase();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -96,6 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             _bannerConectividad(),
             const SizedBox(height: 16),
+            _encabezadoTerritorio(),
             const Text('Mis reservorios', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             if (_reservorios.isEmpty)

@@ -69,19 +69,16 @@ def sembrar() -> None:
             return
 
         # ── Ubigeo (distrito de Pampas, Tayacaja) ───────────────
-        ubigeo = Ubigeo(codigo_ubigeo="090701", departamento="HUANCAVELICA",
-                        provincia="TAYACAJA", distrito="PAMPAS")
+        ubigeo = Ubigeo(codigo_ubigeo="090201", departamento="HUANCAVELICA",
+                        provincia="ANGARAES", distrito="LIRCAY")
         db.add(ubigeo)
         db.flush()
 
         # ── Comunidades ─────────────────────────────────────────
         comunidades_def = [
-            ("Chocce", -12.400, -74.870, 420),
-            ("Ahuaycha", -12.383, -74.865, 610),
-            ("Pichccahuasi", -12.430, -74.900, 260),
-            ("Colpapampa", -12.415, -74.845, 350),
-            ("La Merced", -12.395, -74.880, 500),
-            ("Huaribamba", -12.360, -74.910, 300),
+            ("Comunidad 01", -12.9833, -74.7167, 420),
+            ("Comunidad 02", -12.9705, -74.7042, 610),
+            ("Comunidad 03", -13.0012, -74.7290, 260),
         ]
         comunidades = {}
         for nombre, lat, lon, pob in comunidades_def:
@@ -93,9 +90,11 @@ def sembrar() -> None:
 
         # ── Reservorios (uno por comunidad) ─────────────────────
         reservorios = {}
+        volumenes = [12, 8, 15]
         for i, (nombre, c) in enumerate(comunidades.items(), start=1):
-            r = Reservorio(comunidad_id=c.comunidad_id, codigo=f"RES-{i:03d}",
-                           volumen_m3=[12, 20, 8, 15, 25, 10][i - 1],
+            r = Reservorio(comunidad_id=c.comunidad_id,
+                           codigo=f"R{i} - LIRCAY - COM - {i:02d}",
+                           volumen_m3=volumenes[i - 1],
                            tipo_sistema="Gravedad", estado_infra="Operativo",
                            umbral_silencio_dias=7)
             db.add(r)
@@ -107,15 +106,15 @@ def sembrar() -> None:
         ub = ubigeo.ubigeo_id
         cid = lambda n: comunidades[n].comunidad_id  # noqa: E731
         usuarios_def = [
-            ("Máximo Quispe (operador)", "70100001", "987000001", RolUsuario.OPERADOR, "JASS Chocce", cid("Chocce"), ub),
-            ("Rosa Huamán (operador)", "70100002", "987000002", RolUsuario.OPERADOR, "JASS Ahuaycha", cid("Ahuaycha"), ub),
-            ("Directivo JASS Chocce", "70100010", "987000010", RolUsuario.DIRECTIVO_JASS, "JASS Chocce", cid("Chocce"), ub),
-            ("Ing. Pazos (ATM)", "70100020", "987000020", RolUsuario.ATM, "Municipalidad de Pampas", None, ub),
+            ("Máximo Quispe (operador)", "70100001", "987000001", RolUsuario.OPERADOR, "JASS Comunidad 01", cid("Comunidad 01"), ub),
+            ("Rosa Huamán (operador)", "70100002", "987000002", RolUsuario.OPERADOR, "JASS Comunidad 02", cid("Comunidad 02"), ub),
+            ("Directivo JASS Comunidad 01", "70100010", "987000010", RolUsuario.DIRECTIVO_JASS, "JASS Comunidad 01", cid("Comunidad 01"), ub),
+            ("Ing. Pazos (ATM)", "70100020", "987000020", RolUsuario.ATM, "Municipalidad de Lircay", None, ub),
             ("Esp. Ccora (DESA)", "70100030", "987000030", RolUsuario.DESA, "DIRESA Huancavelica", None, None),
-            ("Tec. Salud Pampas", "70100040", "987000040", RolUsuario.SALUD, "C.S. Pampas", None, ub),
-            ("Teniente gobernador Chocce", "70100050", "987000050", RolUsuario.AUTORIDAD_LOCAL, "Autoridad comunal", cid("Chocce"), ub),
-            ("Promotor comunal Chocce", "70100060", "987000060", RolUsuario.POBLACION, "Difusión a la población", cid("Chocce"), ub),
-            ("Promotor comunal Ahuaycha", "70100061", "987000061", RolUsuario.POBLACION, "Difusión a la población", cid("Ahuaycha"), ub),
+            ("Tec. Salud Pampas", "70100040", "987000040", RolUsuario.SALUD, "C.S. Lircay", None, ub),
+            ("Teniente gobernador Lircay", "70100050", "987000050", RolUsuario.AUTORIDAD_LOCAL, "Autoridad comunal", cid("Comunidad 01"), ub),
+            ("Promotor comunal Comunidad 01", "70100060", "987000060", RolUsuario.POBLACION, "Difusión a la población", cid("Comunidad 01"), ub),
+            ("Promotor comunal Comunidad 02", "70100061", "987000061", RolUsuario.POBLACION, "Difusión a la población", cid("Comunidad 02"), ub),
             ("Esp. Saneamiento (DRVCS)", "70100070", "987000070", RolUsuario.DRVCS, "Dir. Reg. Vivienda y Saneamiento", None, None),
             ("Administrador", "70100099", "987000099", RolUsuario.ADMIN, "YakuAlerta", None, None),
         ]
@@ -129,23 +128,21 @@ def sembrar() -> None:
 
         # ── Asignaciones operador ↔ reservorio ──────────────────
         db.add(AsignacionOperador(usuario_id=usuarios["987000001"].usuario_id,
-                                  reservorio_id=reservorios["Chocce"].reservorio_id))
+                                  reservorio_id=reservorios["Comunidad 01"].reservorio_id))
         db.add(AsignacionOperador(usuario_id=usuarios["987000001"].usuario_id,
-                                  reservorio_id=reservorios["Pichccahuasi"].reservorio_id))
+                                  reservorio_id=reservorios["Comunidad 02"].reservorio_id))
         db.add(AsignacionOperador(usuario_id=usuarios["987000002"].usuario_id,
-                                  reservorio_id=reservorios["Ahuaycha"].reservorio_id))
+                                  reservorio_id=reservorios["Comunidad 03"].reservorio_id))
         db.flush()
 
         # ── Mediciones demo (verde/amarillo/rojo) ───────────────
         op_id = usuarios["987000001"].usuario_id
         ahora = datetime.now(timezone.utc)
         muestras = [
-            ("Chocce",        0.72, 2.0, None,                    0),   # verde
-            ("Ahuaycha",      0.41, 3.0, None,                    1),   # amarillo
-            ("Pichccahuasi",  0.10, 8.0, "agua turbia tras lluvia", 0), # rojo
-            ("Colpapampa",    0.55, 1.5, None,                    2),   # verde
-            ("La Merced",     0.28, 4.0, None,                    1),   # rojo (cloro bajo)
-            ("Chocce",        0.60, 2.2, None,                    3),   # histórico verde
+            ("Comunidad 01", 0.72, 2.0, None, 0),                        # verde
+            ("Comunidad 02", 0.41, 3.0, None, 1),                        # amarillo
+            ("Comunidad 03", 0.10, 8.0, "agua turbia tras lluvia", 0),   # rojo
+            ("Comunidad 01", 0.60, 2.2, None, 3),                        # histórico verde
         ]
         for nombre, cl, tb, obs, dias in muestras:
             datos = MedicionIn(
@@ -157,10 +154,11 @@ def sembrar() -> None:
             )
             registrar_medicion(db, datos, op_id)
 
-        # Comunidad Huaribamba: sin mediciones → silencio de datos (demo HU-15)
+        # Nota: si se agrega una cuarta comunidad sin mediciones, aparecerá
+        # como silencio de datos (demo HU-15).
 
         db.commit()
-        log.info("✅ Datos demo cargados: distrito PAMPAS, %d comunidades, %d usuarios.",
+        log.info("✅ Datos demo cargados: distrito LIRCAY (Angaraes), %d comunidades, %d usuarios.",
                  len(comunidades), len(usuarios))
         log.info("   Login tablero → ATM: 987000020 / %s  ·  Admin: 987000099 / %s",
                  CLAVE_DEMO, CLAVE_DEMO)
