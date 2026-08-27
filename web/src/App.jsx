@@ -6,6 +6,7 @@ import Tablero from './pages/Tablero'
 import Alertas from './pages/Alertas'
 import Laboratorio from './pages/Laboratorio'
 import Reportes from './pages/Reportes'
+import MiAgua from './pages/MiAgua'
 
 function Privada({ children }) {
   const { user } = useAuth()
@@ -13,11 +14,18 @@ function Privada({ children }) {
   return <Layout>{children}</Layout>
 }
 
+/** Elige el inicio según el rol de la sesión. */
+function InicioSegunRol() {
+  const { user } = useAuth()
+  return user?.rol === 'POBLACION' ? <MiAgua /> : <Tablero />
+}
+
 export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-      <Route path="/" element={<Privada><Tablero /></Privada>} />
+      {/* La población ve su estado del agua; las instituciones, el tablero. */}
+      <Route path="/" element={<Privada><InicioSegunRol /></Privada>} />
       <Route path="/alertas" element={<Privada><Alertas /></Privada>} />
       <Route path="/laboratorio" element={<Privada><Laboratorio /></Privada>} />
       <Route path="/reportes" element={<Privada><Reportes /></Privada>} />

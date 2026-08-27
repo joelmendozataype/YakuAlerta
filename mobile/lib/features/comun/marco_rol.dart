@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/api/api_client.dart';
 import '../../core/theme.dart';
 import '../auth/login_screen.dart';
+import '../vincular_web/sesiones_screen.dart';
 
 /// Estructura común de las pantallas de rol: barra con el nombre del usuario,
 /// acción de salir y recarga deslizando hacia abajo.
@@ -47,6 +48,16 @@ class MarcoRol extends StatelessWidget {
         ),
         actions: [
           ...acciones,
+          // Cualquier perfil puede abrir su tablero web escaneando el código:
+          // el acceso que concede es exactamente el suyo, con su mismo rol.
+          IconButton(
+            tooltip: 'Dispositivos vinculados',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SesionesScreen()),
+            ),
+            icon: const Icon(Icons.devices_other),
+          ),
           IconButton(
             tooltip: 'Salir',
             onPressed: () => _salir(context),

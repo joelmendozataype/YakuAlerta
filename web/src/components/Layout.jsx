@@ -1,12 +1,16 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth'
 
+// Cada sección declara qué roles pueden usarla: el menú no ofrece opciones
+// que el servidor luego rechazaría.
 const NAV = [
-  { to: '/', label: 'Tablero', icon: '📊', end: true },
-  { to: '/alertas', label: 'Alertas', icon: '🔔' },
-  { to: '/laboratorio', label: 'Laboratorio', icon: '🧪' },
-  { to: '/reportes', label: 'Reportes', icon: '📄' },
+  { to: '/', label: 'Tablero', icon: '📊', end: true, roles: null },
+  { to: '/alertas', label: 'Alertas', icon: '🔔', roles: null },
+  { to: '/laboratorio', label: 'Laboratorio', icon: '🧪', roles: ['DESA', 'ATM', 'ADMIN'] },
+  { to: '/reportes', label: 'Reportes', icon: '📄', roles: ['ATM', 'DESA', 'ADMIN'] },
 ]
+
+const puedeVer = (item, rol) => item.roles === null || item.roles.includes(rol)
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth()
@@ -24,7 +28,7 @@ export default function Layout({ children }) {
             </div>
           </div>
           <nav className="hidden md:flex items-center gap-1">
-            {NAV.map((n) => (
+            {NAV.filter((n) => puedeVer(n, user?.rol)).map((n) => (
               <NavLink key={n.to} to={n.to} end={n.end}
                 className={({ isActive }) =>
                   `px-3 py-2 rounded-lg text-sm font-medium transition ${
@@ -47,7 +51,7 @@ export default function Layout({ children }) {
         </div>
         {/* Nav móvil */}
         <nav className="md:hidden flex items-center gap-1 px-4 pb-2 overflow-x-auto">
-          {NAV.map((n) => (
+          {NAV.filter((n) => puedeVer(n, user?.rol)).map((n) => (
             <NavLink key={n.to} to={n.to} end={n.end}
               className={({ isActive }) =>
                 `px-3 py-1.5 rounded-lg text-sm whitespace-nowrap ${

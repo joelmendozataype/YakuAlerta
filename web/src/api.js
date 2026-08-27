@@ -47,6 +47,7 @@ export const api = {
   alerta: (id) => request(`/alertas/${id}`),
   cerrarAlerta: (id, payload) => request(`/alertas/${id}/cerrar`, { method: 'POST', body: payload }),
   silencio: () => request('/reportes/silencio'),
+  estadoPublico: (comunidadId) => request(`/publico/comunidad/${comunidadId}/estado`),
   // Afiche comunitario imprimible con QR (para fijar en el punto de agua)
   avisoComunitario: (comunidadId) =>
     request(`/avisos/comunidad/${comunidadId}`, { blob: true }),
