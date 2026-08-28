@@ -187,6 +187,18 @@ class UsuarioIn(BaseModel):
     comunidad_id: int | None = None
 
 
+class ActorOut(BaseModel):
+    """Un actor del sistema y dónde trabaja."""
+    orden: int
+    grupo: GrupoRol
+    actor: str
+    movil: bool
+    tablero: bool
+    roles: list[RolUsuario]
+    cuentas: int
+    activas: int
+
+
 class UsuarioPatch(BaseModel):
     """Lo que se puede corregir de una cuenta ya creada.
 

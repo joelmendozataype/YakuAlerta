@@ -24,12 +24,14 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..deps import requiere_roles
-from ..enums import RolUsuario
+from ..enums import (
+    ACTORES, GRUPOS_DEL_TABLERO, GRUPOS_DE_LA_APP, ROLES_POR_GRUPO, RolUsuario,
+)
 from ..models import (
     AsignacionOperador, Comunidad, Reservorio, Ubigeo, Usuario,
 )
 from ..schemas import (
-    ClaveTemporalOut, ComunidadIn, ComunidadOut, JassOut, ReservorioIn,
+    ActorOut, ClaveTemporalOut, ComunidadIn, ComunidadOut, JassOut, ReservorioIn,
     ReservorioOut, UbigeoOut, UsuarioIn, UsuarioOut, UsuarioPatch,
 )
 from ..services.directorio_jass import listar_jass
@@ -73,6 +75,36 @@ def _commit(db: Session) -> None:
     except IntegrityError as e:
         db.rollback()
         raise HTTPException(status.HTTP_409_CONFLICT, f"Violación de integridad: {e.orig}")
+
+
+# ─── Los actores del sistema ────────────────────────────────────
+@router.get("/actores", response_model=list[ActorOut])
+def listar_actores(db: Session = Depends(get_db),
+                   usuario: Usuario = Depends(_administra)):
+    """Los siete actores, con dónde entra cada uno y cuántas cuentas tiene.
+
+    El catálogo no se escribe aquí: sale de la misma declaración que gobierna
+    las dos pantallas de ingreso, para que el panel no pueda quedar contando
+    una cosa mientras el login ofrece otra.
+    """
+    q = db.query(Usuario)
+    if not _es_regional(usuario):
+        q = q.filter(Usuario.ubigeo_id == usuario.ubigeo_id)
+    cuentas = q.all()
+
+    salida: list[ActorOut] = []
+    for orden, (grupo, nombre) in enumerate(ACTORES, start=1):
+        roles = ROLES_POR_GRUPO[grupo]
+        suyas = [u for u in cuentas if u.rol in roles]
+        salida.append(ActorOut(
+            orden=orden, grupo=grupo, actor=nombre,
+            movil=grupo in GRUPOS_DE_LA_APP,
+            tablero=grupo in GRUPOS_DEL_TABLERO,
+            roles=list(roles),
+            cuentas=len(suyas),
+            activas=sum(1 for u in suyas if u.activo),
+        ))
+    return salida
 
 
 # ─── Directorio de JASS ─────────────────────────────────────────

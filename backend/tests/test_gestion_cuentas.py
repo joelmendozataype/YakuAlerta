@@ -208,3 +208,68 @@ def test_el_padron_se_lee_por_comunidad_y_distrito():
     assert operador["distrito"] == "LIRCAY"
     # Una cuenta regional no tiene distrito, y eso también debe verse.
     assert usuarios["Esp. Ccora (DESA)"]["distrito"] is None
+
+
+# ─── Catálogo de actores ─────────────────────────────────────────
+def test_el_panel_muestra_los_siete_actores():
+    r = client.get("/admin/actores", headers=_admin())
+    assert r.status_code == 200, r.text
+    actores = r.json()
+    assert len(actores) == 7
+    assert [a["actor"] for a in actores] == [
+        "JASS", "ATM", "IPRESS / Salud", "Usuario / vecino",
+        "DESA", "DRVCS", "Administrador",
+    ]
+    assert [a["orden"] for a in actores] == list(range(1, 8))
+
+
+def test_cada_actor_declara_su_superficie():
+    """Debe coincidir con lo que ofrecen las dos pantallas de ingreso."""
+    a = {x["actor"]: x for x in client.get("/admin/actores", headers=_admin()).json()}
+
+    # Solo la app: trabajan en campo.
+    assert (a["JASS"]["movil"], a["JASS"]["tablero"]) == (True, False)
+    assert (a["Usuario / vecino"]["movil"], a["Usuario / vecino"]["tablero"]) == (True, False)
+    # Ambas: verifican en campo y deciden en oficina.
+    for nombre in ("ATM", "IPRESS / Salud"):
+        assert a[nombre]["movil"] and a[nombre]["tablero"], nombre
+    # Solo el tablero: nunca salen de la oficina.
+    for nombre in ("DESA", "DRVCS", "Administrador"):
+        assert not a[nombre]["movil"] and a[nombre]["tablero"], nombre
+
+    assert sum(x["movil"] for x in a.values()) == 4
+    assert sum(x["tablero"] for x in a.values()) == 5
+
+
+def test_el_catalogo_cuenta_las_cuentas_de_cada_actor():
+    a = {x["actor"]: x for x in client.get("/admin/actores", headers=_admin()).json()}
+    # La JASS agrupa operadores y directivos de las tres comunidades.
+    assert a["JASS"]["cuentas"] >= 6
+    assert set(a["JASS"]["roles"]) == {"OPERADOR", "DIRECTIVO_JASS"}
+    assert a["Administrador"]["cuentas"] >= 1
+
+
+def test_una_baja_se_refleja_en_el_catalogo():
+    """Las activas y el total deben separarse cuando alguien deja el sistema."""
+    h = _atm()
+    u = _crear_operador(h)
+    antes = next(x for x in client.get("/admin/actores", headers=h).json()
+                 if x["actor"] == "JASS")
+    client.patch(f"/admin/usuarios/{u['usuario_id']}", headers=h, json={"activo": False})
+    despues = next(x for x in client.get("/admin/actores", headers=h).json()
+                   if x["actor"] == "JASS")
+    assert despues["cuentas"] == antes["cuentas"]
+    assert despues["activas"] == antes["activas"] - 1
+
+
+def test_la_atm_ve_el_catalogo_acotado_a_su_distrito():
+    """Las cuentas regionales no son suyas, aunque el actor exista igual."""
+    a = {x["actor"]: x for x in client.get("/admin/actores", headers=_atm()).json()}
+    assert len(a) == 7                    # el catálogo es el mismo
+    assert a["DESA"]["cuentas"] == 0      # pero sin cuentas fuera de su ámbito
+    assert a["JASS"]["cuentas"] >= 6
+
+
+def test_la_jass_no_ve_el_catalogo_de_actores():
+    assert client.get("/admin/actores",
+                      headers=_auth("70100001", "JASS")).status_code == 403

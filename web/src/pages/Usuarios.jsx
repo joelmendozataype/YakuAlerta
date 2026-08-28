@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../auth'
 import { api } from '../api'
 import { Spinner } from '../components/ui'
+import Actores from '../components/Actores'
 
 /**
  * Padrón de cuentas del sistema.
@@ -247,6 +248,8 @@ export default function Usuarios() {
           </button>
         )}
       </div>
+
+      <Actores />
 
       {error && <div className="card text-rojo">{error}</div>}
 

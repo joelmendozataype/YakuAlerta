@@ -103,6 +103,26 @@ def grupo_de_rol(rol: RolUsuario) -> GrupoRol | None:
     return None
 
 
+# ── Los siete actores del sistema ────────────────────────────────
+# Cada grupo es un actor. Dos superficies, y quien está en las dos lo está
+# porque su trabajo ocurre en ambos sitios: la ATM y Salud verifican en campo
+# y deciden en oficina.
+GRUPOS_DE_LA_APP: frozenset[GrupoRol] = frozenset({
+    GrupoRol.JASS, GrupoRol.ATM, GrupoRol.IPRESS_SALUD, GrupoRol.USUARIO,
+})
+
+# Nombre con el que cada actor se presenta, y el orden en que se listan.
+ACTORES: tuple[tuple[GrupoRol, str], ...] = (
+    (GrupoRol.JASS, "JASS"),
+    (GrupoRol.ATM, "ATM"),
+    (GrupoRol.IPRESS_SALUD, "IPRESS / Salud"),
+    (GrupoRol.USUARIO, "Usuario / vecino"),
+    (GrupoRol.DESA, "DESA"),
+    (GrupoRol.DRVCS, "DRVCS"),
+    (GrupoRol.ADMIN, "Administrador"),
+)
+
+
 # ── Quién trabaja en el tablero web ──────────────────────────────
 # El tablero es de quien decide desde una oficina. Quedan fuera dos grupos, y
 # por razones distintas:

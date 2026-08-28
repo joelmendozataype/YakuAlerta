@@ -51,6 +51,8 @@ export const api = {
   // Directorio de JASS del distrito (una junta por comunidad).
   jass: () => request('/admin/jass'),
   // Padrón de cuentas: la ATM administra su distrito; el ADMIN, la región.
+  // Los siete actores del sistema y donde entra cada uno.
+  actores: () => request('/admin/actores'),
   usuarios: () => request('/admin/usuarios'),
   crearUsuario: (payload) => request('/admin/usuarios', { method: 'POST', body: payload }),
   corregirUsuario: (id, payload) =>
