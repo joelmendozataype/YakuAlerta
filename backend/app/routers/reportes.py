@@ -20,7 +20,8 @@ def reporte_vigilancia(
     periodo: str = Query(..., pattern=r"^\d{4}-\d{2}$", examples=["2026-08"]),
     formato: str = Query("pdf", pattern="^(pdf|xlsx)$"),
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(requiere_roles(RolUsuario.ATM, RolUsuario.DESA, RolUsuario.ADMIN)),
+    usuario: Usuario = Depends(requiere_roles(
+        RolUsuario.ATM, RolUsuario.DESA, RolUsuario.DRVCS, RolUsuario.ADMIN)),
 ):
     """Genera y descarga el reporte consolidado en PDF o Excel."""
     if formato == "xlsx":
@@ -43,7 +44,8 @@ def reporte_vigilancia(
 
 @router.get("/silencio")
 def silencio_actual(db: Session = Depends(get_db),
-                    usuario: Usuario = Depends(requiere_roles(RolUsuario.ATM, RolUsuario.ADMIN))):
+                    usuario: Usuario = Depends(requiere_roles(
+                        RolUsuario.ATM, RolUsuario.DRVCS, RolUsuario.ADMIN))):
     """Lista los reservorios en silencio de datos (sin notificar)."""
     return [
         {"reservorio_id": r.reservorio_id, "codigo": r.codigo,

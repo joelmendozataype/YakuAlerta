@@ -7,7 +7,7 @@ const NAV = [
   { to: '/', label: 'Tablero', icon: '📊', end: true, roles: null },
   { to: '/alertas', label: 'Alertas', icon: '🔔', roles: null },
   { to: '/laboratorio', label: 'Laboratorio', icon: '🧪', roles: ['DESA', 'ATM', 'ADMIN'] },
-  { to: '/reportes', label: 'Reportes', icon: '📄', roles: ['ATM', 'DESA', 'ADMIN'] },
+  { to: '/reportes', label: 'Reportes', icon: '📄', roles: ['ATM', 'DESA', 'DRVCS', 'ADMIN'] },
 ]
 
 const puedeVer = (item, rol) => item.roles === null || item.roles.includes(rol)
