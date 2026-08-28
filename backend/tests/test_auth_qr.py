@@ -7,6 +7,7 @@ Quien vincula un dispositivo es quien trabaja en el tablero (ATM, Salud, DESA,
 DRVCS, población). La JASS no: su trabajo ocurre en la app móvil.
 """
 import hashlib
+import random
 import secrets
 
 import pytest
@@ -138,7 +139,16 @@ def test_la_jass_no_vincula_dispositivos_web(qr):
 
 def test_el_directivo_jass_tampoco_vincula(qr):
     token, client_secret = qr
-    d = client.post("/auth/login", json={"telefono": "987000010", "clave": CLAVE})
+    atm = client.post("/auth/login", json={"telefono": "987000020", "clave": CLAVE})
+    n = random.randint(10_000_000, 79_999_999)
+    alta = client.post("/admin/usuarios",
+                       headers={"Authorization": f"Bearer {atm.json()['access_token']}"},
+                       json={"nombres": "Directivo de prueba", "dni": str(n),
+                             "telefono": f"9{n % 100_000_000:08d}", "clave": "clave12345",
+                             "rol": "DIRECTIVO_JASS"})
+    assert alta.status_code == 201, alta.text
+
+    d = client.post("/auth/login", json={"dni": str(n), "clave": "clave12345"})
     h = {"Authorization": f"Bearer {d.json()['access_token']}"}
     client.post(f"/auth/qr/{token}/escanear", headers=h)
     client.post(f"/auth/qr/{token}/confirmar", headers=h, json={"aprobar": True})

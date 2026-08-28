@@ -49,14 +49,15 @@ def test_cada_comunidad_tiene_una_sola_jass():
 
 
 def test_cada_jass_trae_a_su_gente():
-    """Operador y directivo aparecen bajo su propia junta."""
+    """Cada junta lista a los suyos, y solo a los suyos."""
     jass = {j["comunidad"]: j for j in _jass_de(_auth(ATM))}
     uno = jass["Comunidad 01"]
-    roles = {m["rol"] for m in uno["miembros"]}
-    assert "OPERADOR" in roles and "DIRECTIVO_JASS" in roles
+    assert "OPERADOR" in {m["rol"] for m in uno["miembros"]}
+
     # Nadie de otra comunidad se cuela en esta junta.
-    nombres = {m["nombres"] for m in uno["miembros"]}
-    assert not any("Comunidad 02" in n or "Comunidad 03" in n for n in nombres)
+    ajenos = {m["usuario_id"] for j in jass.values() if j["comunidad"] != "Comunidad 01"
+              for m in j["miembros"]}
+    assert not ajenos & {m["usuario_id"] for m in uno["miembros"]}
 
 
 def test_la_jass_reporta_su_estado_y_su_silencio():

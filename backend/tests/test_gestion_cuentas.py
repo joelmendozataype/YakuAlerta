@@ -203,7 +203,7 @@ def test_la_jass_no_ve_los_umbrales():
 def test_el_padron_se_lee_por_comunidad_y_distrito():
     """La columna de ámbito debe decir dónde trabaja cada quien, no un id."""
     usuarios = {u["nombres"]: u for u in client.get("/admin/usuarios", headers=_admin()).json()}
-    operador = usuarios["Máximo Quispe (operador)"]
+    operador = usuarios["Máximo Quispe"]
     assert operador["comunidad"] == "Comunidad 01"
     assert operador["distrito"] == "LIRCAY"
     # Una cuenta regional no tiene distrito, y eso también debe verse.
@@ -243,8 +243,9 @@ def test_cada_actor_declara_su_superficie():
 
 def test_el_catalogo_cuenta_las_cuentas_de_cada_actor():
     a = {x["actor"]: x for x in client.get("/admin/actores", headers=_admin()).json()}
-    # La JASS agrupa operadores y directivos de las tres comunidades.
-    assert a["JASS"]["cuentas"] >= 6
+    # Una junta por comunidad: tres cuentas de JASS en Lircay.
+    assert a["JASS"]["cuentas"] >= 3
+    # El actor admite las dos funciones, aunque el piloto siembre solo una.
     assert set(a["JASS"]["roles"]) == {"OPERADOR", "DIRECTIVO_JASS"}
     assert a["Administrador"]["cuentas"] >= 1
 
@@ -267,7 +268,7 @@ def test_la_atm_ve_el_catalogo_acotado_a_su_distrito():
     a = {x["actor"]: x for x in client.get("/admin/actores", headers=_atm()).json()}
     assert len(a) == 7                    # el catálogo es el mismo
     assert a["DESA"]["cuentas"] == 0      # pero sin cuentas fuera de su ámbito
-    assert a["JASS"]["cuentas"] >= 6
+    assert a["JASS"]["cuentas"] >= 3
 
 
 def test_la_jass_no_ve_el_catalogo_de_actores():

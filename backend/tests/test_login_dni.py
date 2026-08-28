@@ -19,9 +19,7 @@ def _login(**kwargs):
 
 @pytest.mark.parametrize("dni,grupo,rol_esperado", [
     ("70100001", "JASS", "OPERADOR"),          # operador de la JASS
-    ("70100010", "JASS", "DIRECTIVO_JASS"),    # directivo, mismo grupo
     ("70100020", "ATM", "ATM"),
-    ("70100050", "ATM", "AUTORIDAD_LOCAL"),    # autoridad local, grupo ATM
     ("70100040", "IPRESS_SALUD", "SALUD"),
     ("70100060", "USUARIO", "POBLACION"),
 ])

@@ -103,23 +103,24 @@ def sembrar() -> None:
             db.flush()
             reservorios[nombre] = r
 
-        # ── Usuarios (todos los roles) ──────────────────────────
+        # ── Usuarios: una cuenta por actor ──────────────────────
+        # Nueve cuentas para siete actores. La JASS lleva tres porque son tres
+        # juntas —una por comunidad—; el resto, una cada uno. Los demás roles
+        # que el sistema admite (directivo JASS, autoridad local) se dan de
+        # alta desde el panel cuando el piloto los necesite.
         #  (nombres, DNI, teléfono, rol, entidad, comunidad, ámbito distrital)
         ub = ubigeo.ubigeo_id
         cid = lambda n: comunidades[n].comunidad_id  # noqa: E731
         usuarios_def = [
-            ("Máximo Quispe (operador)", "70100001", "987000001", RolUsuario.OPERADOR, "JASS Comunidad 01", cid("Comunidad 01"), ub),
-            ("Rosa Huamán (operador)", "70100002", "987000002", RolUsuario.OPERADOR, "JASS Comunidad 02", cid("Comunidad 02"), ub),
-            ("Julián Ccanto (operador)", "70100003", "987000003", RolUsuario.OPERADOR, "JASS Comunidad 03", cid("Comunidad 03"), ub),
-            ("Directivo JASS Comunidad 01", "70100010", "987000010", RolUsuario.DIRECTIVO_JASS, "JASS Comunidad 01", cid("Comunidad 01"), ub),
-            ("Directivo JASS Comunidad 02", "70100011", "987000011", RolUsuario.DIRECTIVO_JASS, "JASS Comunidad 02", cid("Comunidad 02"), ub),
-            ("Directivo JASS Comunidad 03", "70100012", "987000012", RolUsuario.DIRECTIVO_JASS, "JASS Comunidad 03", cid("Comunidad 03"), ub),
+            # JASS: una junta por comunidad, representada por quien mide.
+            ("Máximo Quispe", "70100001", "987000001", RolUsuario.OPERADOR, "JASS Comunidad 01", cid("Comunidad 01"), ub),
+            ("Rosa Huamán", "70100002", "987000002", RolUsuario.OPERADOR, "JASS Comunidad 02", cid("Comunidad 02"), ub),
+            ("Julián Ccanto", "70100003", "987000003", RolUsuario.OPERADOR, "JASS Comunidad 03", cid("Comunidad 03"), ub),
+            # Un actor institucional por entidad.
             ("Ing. Pazos (ATM)", "70100020", "987000020", RolUsuario.ATM, "Municipalidad de Lircay", None, ub),
-            ("Esp. Ccora (DESA)", "70100030", "987000030", RolUsuario.DESA, "DIRESA Huancavelica", None, None),
             ("Tec. Salud Pampas", "70100040", "987000040", RolUsuario.SALUD, "C.S. Lircay", None, ub),
-            ("Teniente gobernador Lircay", "70100050", "987000050", RolUsuario.AUTORIDAD_LOCAL, "Autoridad comunal", cid("Comunidad 01"), ub),
-            ("Promotor comunal Comunidad 01", "70100060", "987000060", RolUsuario.POBLACION, "Difusión a la población", cid("Comunidad 01"), ub),
-            ("Promotor comunal Comunidad 02", "70100061", "987000061", RolUsuario.POBLACION, "Difusión a la población", cid("Comunidad 02"), ub),
+            ("Promotor comunal", "70100060", "987000060", RolUsuario.POBLACION, "Difusión a la población", cid("Comunidad 01"), ub),
+            ("Esp. Ccora (DESA)", "70100030", "987000030", RolUsuario.DESA, "DIRESA Huancavelica", None, None),
             ("Esp. Saneamiento (DRVCS)", "70100070", "987000070", RolUsuario.DRVCS, "Dir. Reg. Vivienda y Saneamiento", None, None),
             ("Administrador", "70100099", "987000099", RolUsuario.ADMIN, "Yakuni", None, None),
         ]
