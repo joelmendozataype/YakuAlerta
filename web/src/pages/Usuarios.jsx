@@ -13,38 +13,39 @@ import Actores from '../components/Actores'
  * rechazado, para no hacer perder el tiempo a quien administra.
  */
 
-// Perfiles de campo que la ATM puede dar de alta.
-const ROLES_DE_CAMPO = [
-  { valor: 'OPERADOR', etiqueta: 'Operador (mide el reservorio)' },
-  { valor: 'DIRECTIVO_JASS', etiqueta: 'JASS' },
-  { valor: 'AUTORIDAD_LOCAL', etiqueta: 'Autoridad local' },
-  { valor: 'POBLACION', etiqueta: 'Promotor comunal' },
-]
+// Toda cuenta pertenece a uno de los siete actores. Dos de ellos agrupan más
+// de una función, y solo ahí hace falta precisarla: en los demás, el nombre
+// del actor ya dice todo.
+const FUNCION = {
+  OPERADOR: 'Operador · mide el reservorio',
+  DIRECTIVO_JASS: 'Directivo · preside la junta',
+  ATM: 'Área Técnica Municipal',
+  AUTORIDAD_LOCAL: 'Autoridad local',
+}
 
-// Cuentas de alcance regional: solo el ADMIN las crea.
-const ROLES_REGIONALES = [
-  { valor: 'ATM', etiqueta: 'ATM (Área Técnica Municipal)' },
-  { valor: 'SALUD', etiqueta: 'IPRESS / Salud' },
-  { valor: 'DESA', etiqueta: 'DESA (autoridad sanitaria)' },
-  { valor: 'DRVCS', etiqueta: 'DRVCS (saneamiento)' },
-  { valor: 'ADMIN', etiqueta: 'Administrador del sistema' },
-]
-
-const NOMBRE_ROL = Object.fromEntries(
-  [...ROLES_DE_CAMPO, ...ROLES_REGIONALES].map((r) => [r.valor, r.etiqueta]),
-)
+// Roles que la ATM puede dar de alta; el resto son de alcance regional y los
+// crea solo el ADMIN. El backend lo vuelve a verificar.
+const ROLES_DE_CAMPO = ['OPERADOR', 'DIRECTIVO_JASS', 'AUTORIDAD_LOCAL', 'POBLACION']
 
 const vacio = {
   nombres: '', dni: '', telefono: '', clave: '',
   rol: 'OPERADOR', entidad: '', comunidad_id: '',
 }
 
-function Formulario({ esAdmin, comunidades, onCreado, onCancelar }) {
+function Formulario({ esAdmin, actores, comunidades, onCreado, onCancelar }) {
   const [f, setF] = useState(vacio)
   const [error, setError] = useState('')
   const [guardando, setGuardando] = useState(false)
 
-  const roles = esAdmin ? [...ROLES_DE_CAMPO, ...ROLES_REGIONALES] : ROLES_DE_CAMPO
+  // El desplegable se agrupa por actor: primero se elige a quién representa la
+  // persona y recién después, si el actor tiene más de una, su función.
+  const grupos = actores
+    .map((a) => ({
+      actor: a.actor,
+      roles: a.roles.filter((r) => esAdmin || ROLES_DE_CAMPO.includes(r)),
+    }))
+    .filter((g) => g.roles.length > 0)
+
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
 
   async function enviar(e) {
@@ -97,9 +98,17 @@ function Formulario({ esAdmin, comunidades, onCreado, onCancelar }) {
         </label>
 
         <label className="block">
-          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Rol</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Actor
+          </span>
           <select className="input mt-1" value={f.rol} onChange={set('rol')}>
-            {roles.map((r) => <option key={r.valor} value={r.valor}>{r.etiqueta}</option>)}
+            {grupos.map((g) => (
+              <optgroup key={g.actor} label={g.actor}>
+                {g.roles.map((r) => (
+                  <option key={r} value={r}>{FUNCION[r] || g.actor}</option>
+                ))}
+              </optgroup>
+            ))}
           </select>
         </label>
 
@@ -144,7 +153,7 @@ function Formulario({ esAdmin, comunidades, onCreado, onCancelar }) {
   )
 }
 
-function Fila({ u, yo, onCambio, onClave }) {
+function Fila({ u, yo, actorDe, onCambio, onClave }) {
   const [ocupado, setOcupado] = useState(false)
   const esYo = u.usuario_id === yo?.usuario_id
 
@@ -160,8 +169,10 @@ function Fila({ u, yo, onCambio, onClave }) {
         <p className="text-xs text-slate-400">DNI {u.dni || '—'} · {u.telefono}</p>
       </td>
       <td className="px-4 py-3 text-sm">
-        <p>{NOMBRE_ROL[u.rol] || u.rol}</p>
-        {u.entidad && <p className="text-xs text-slate-400">{u.entidad}</p>}
+        <p className="font-medium">{actorDe[u.rol] || u.rol}</p>
+        <p className="text-xs text-slate-400">
+          {[FUNCION[u.rol], u.entidad].filter(Boolean).join(' · ')}
+        </p>
       </td>
       <td className="px-4 py-3 text-sm text-slate-500">{u.comunidad || u.distrito || '—'}</td>
       <td className="px-4 py-3">
@@ -195,6 +206,9 @@ export default function Usuarios() {
   const esAdmin = user?.rol === 'ADMIN'
 
   const [usuarios, setUsuarios] = useState(null)
+  // Los actores se cargan una sola vez y se comparten: la tabla de arriba y
+  // cada fila del padrón deben nombrar al mismo actor con la misma palabra.
+  const [actores, setActores] = useState(null)
   const [comunidades, setComunidades] = useState([])
   const [creando, setCreando] = useState(false)
   const [error, setError] = useState('')
@@ -202,6 +216,7 @@ export default function Usuarios() {
 
   function cargar() {
     api.usuarios().then(setUsuarios).catch((e) => setError(e.message))
+    api.actores().then(setActores).catch((e) => setError(e.message))
   }
 
   useEffect(() => {
@@ -228,9 +243,13 @@ export default function Usuarios() {
     }
   }
 
-  if (!usuarios) return <Spinner texto="Cargando el padrón de cuentas…" />
+  if (!usuarios || !actores) return <Spinner texto="Cargando el padrón de cuentas…" />
 
   const activas = usuarios.filter((u) => u.activo).length
+  // Rol interno → actor al que representa, según lo declara el backend.
+  const actorDe = Object.fromEntries(
+    actores.flatMap((a) => a.roles.map((r) => [r, a.actor])),
+  )
 
   return (
     <div className="space-y-6">
@@ -249,7 +268,7 @@ export default function Usuarios() {
         )}
       </div>
 
-      <Actores />
+      <Actores actores={actores} />
 
       {error && <div className="card text-rojo">{error}</div>}
 
@@ -270,7 +289,7 @@ export default function Usuarios() {
       )}
 
       {creando && (
-        <Formulario esAdmin={esAdmin} comunidades={comunidades}
+        <Formulario esAdmin={esAdmin} actores={actores} comunidades={comunidades}
           onCancelar={() => setCreando(false)}
           onCreado={() => { setCreando(false); cargar() }} />
       )}
@@ -280,7 +299,7 @@ export default function Usuarios() {
           <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-4 py-3 font-semibold">Persona</th>
-              <th className="px-4 py-3 font-semibold">Rol</th>
+              <th className="px-4 py-3 font-semibold">Actor</th>
               <th className="px-4 py-3 font-semibold">Ámbito</th>
               <th className="px-4 py-3 font-semibold">Estado</th>
               <th className="px-4 py-3" />
@@ -288,7 +307,7 @@ export default function Usuarios() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {usuarios.map((u) => (
-              <Fila key={u.usuario_id} u={u} yo={user}
+              <Fila key={u.usuario_id} u={u} yo={user} actorDe={actorDe}
                 onCambio={cambiar} onClave={clave} />
             ))}
           </tbody>

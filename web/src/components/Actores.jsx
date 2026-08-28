@@ -1,5 +1,3 @@
-import { useEffect, useState } from 'react'
-import { api } from '../api'
 
 /**
  * Los siete actores del sistema, con la superficie por la que entra cada uno.
@@ -27,16 +25,8 @@ function Donde({ movil, tablero }) {
   )
 }
 
-export default function Actores() {
-  const [actores, setActores] = useState(null)
-  const [error, setError] = useState('')
-
-  useEffect(() => {
-    api.actores().then(setActores).catch((e) => setError(e.message))
-  }, [])
-
-  if (error) return <div className="card text-rojo">{error}</div>
-  if (!actores) return null
+export default function Actores({ actores }) {
+  if (!actores?.length) return null
 
   const enMovil = actores.filter((a) => a.movil).length
   const enWeb = actores.filter((a) => a.tablero).length
