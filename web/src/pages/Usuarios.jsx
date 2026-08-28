@@ -33,6 +33,15 @@ function Formulario({ esAdmin, actores, comunidades, onCreado, onCancelar }) {
     (a) => esAdmin || ACTORES_DE_CAMPO.includes(a.grupo),
   )
 
+  // Las comunidades se registran a mano y cuelgan de su distrito, así que la
+  // lista se agrupa por él. Con un solo distrito el encabezado sobra.
+  const porDistrito = comunidades.reduce((mapa, c) => {
+    const clave = c.distrito || 'Sin distrito'
+    ;(mapa[clave] ||= []).push(c)
+    return mapa
+  }, {})
+  const variosDistritos = Object.keys(porDistrito).length > 1
+
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
 
   async function enviar(e) {
@@ -99,11 +108,24 @@ function Formulario({ esAdmin, actores, comunidades, onCreado, onCancelar }) {
           <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Comunidad
           </span>
+          {comunidades.length === 0 && (
+            <span className="mt-1 block text-xs text-amarillo">
+              Su distrito aún no tiene comunidades. Regístrelas desde «JASS».
+            </span>
+          )}
           <select className="input mt-1" value={f.comunidad_id} onChange={set('comunidad_id')}>
             <option value="">Sin comunidad (ámbito distrital)</option>
-            {comunidades.map((c) => (
-              <option key={c.comunidad_id} value={c.comunidad_id}>{c.nombre}</option>
-            ))}
+            {variosDistritos
+              ? Object.entries(porDistrito).map(([distrito, lista]) => (
+                <optgroup key={distrito} label={distrito}>
+                  {lista.map((c) => (
+                    <option key={c.comunidad_id} value={c.comunidad_id}>{c.nombre}</option>
+                  ))}
+                </optgroup>
+              ))
+              : comunidades.map((c) => (
+                <option key={c.comunidad_id} value={c.comunidad_id}>{c.nombre}</option>
+              ))}
           </select>
         </label>
 

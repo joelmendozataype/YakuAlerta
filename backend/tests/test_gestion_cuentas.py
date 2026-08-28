@@ -327,3 +327,18 @@ def test_cada_actor_declara_con_que_rol_se_registra():
     # El rol principal siempre pertenece a su propio actor.
     for a in actores:
         assert a["rol_principal"] in a["roles"], a["actor"]
+
+
+def test_cada_comunidad_llega_con_su_distrito():
+    """El nombre solo distingue dentro del distrito: elegir sin él es adivinar."""
+    comunidades = client.get("/admin/comunidades", headers=_admin()).json()
+    assert comunidades
+    for c in comunidades:
+        assert c["distrito"], c["nombre"]
+        assert c["provincia"], c["nombre"]
+
+    lircay = [c for c in comunidades if c["distrito"] == "LIRCAY"]
+    assert {c["provincia"] for c in lircay} == {"ANGARAES"}
+    # Y vienen ordenadas por territorio, para poder agruparlas al mostrarlas.
+    territorios = [(c["provincia"], c["distrito"]) for c in comunidades]
+    assert territorios == sorted(territorios)

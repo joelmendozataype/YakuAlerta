@@ -133,10 +133,18 @@ def listar_ubigeos(db: Session = Depends(get_db),
 @router.get("/comunidades", response_model=list[ComunidadOut])
 def listar_comunidades(db: Session = Depends(get_db),
                        usuario: Usuario = Depends(_administra)):
-    q = db.query(Comunidad).order_by(Comunidad.nombre)
+    q = (db.query(Comunidad, Ubigeo)
+           .join(Ubigeo, Comunidad.ubigeo_id == Ubigeo.ubigeo_id)
+           .order_by(Ubigeo.provincia, Ubigeo.distrito, Comunidad.nombre))
     if not _es_regional(usuario):
         q = q.filter(Comunidad.ubigeo_id == usuario.ubigeo_id)
-    return [ComunidadOut.model_validate(c) for c in q]
+    # Con su territorio: el nombre de una comunidad solo distingue dentro de
+    # su distrito, y el ADMIN las ve de todos.
+    return [
+        ComunidadOut.model_validate(c).model_copy(
+            update={"provincia": u.provincia, "distrito": u.distrito})
+        for c, u in q
+    ]
 
 
 @router.post("/comunidades", response_model=ComunidadOut, status_code=201)
