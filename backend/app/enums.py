@@ -104,12 +104,17 @@ def grupo_de_rol(rol: RolUsuario) -> GrupoRol | None:
 
 
 # ── Quién trabaja en el tablero web ──────────────────────────────
-# La JASS queda fuera a propósito: opera en el cerro, sin señal y sin
-# computadora. Todo lo suyo ocurre en la app móvil, offline. Quien necesita el
-# tablero es quien decide desde una oficina —y la población, que consulta el
-# estado de su agua desde cualquier navegador.
+# El tablero es de quien decide desde una oficina. Quedan fuera dos grupos, y
+# por razones distintas:
+#
+#   JASS      opera en el cerro, sin señal y sin computadora: todo su trabajo
+#             ocurre en la app móvil, offline.
+#   USUARIO   el vecino no necesita cuenta para saber si puede beber el agua.
+#             Escanea el QR del aviso fijado en el punto de agua y lee la
+#             página pública, sin registrarse. Su rol existe para *recibir* la
+#             alerta roja en el celular, no para navegar un tablero.
 GRUPOS_DEL_TABLERO: frozenset[GrupoRol] = frozenset({
-    GrupoRol.ATM, GrupoRol.IPRESS_SALUD, GrupoRol.USUARIO,
+    GrupoRol.ATM, GrupoRol.IPRESS_SALUD,
     GrupoRol.DESA, GrupoRol.DRVCS, GrupoRol.ADMIN,
 })
 

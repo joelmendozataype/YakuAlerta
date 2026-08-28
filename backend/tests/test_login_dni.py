@@ -6,6 +6,7 @@ corresponder a su rol, y el tablero web conserva el acceso por celular.
 import pytest
 from fastapi.testclient import TestClient
 
+from app.enums import RolUsuario
 from app.main import app
 
 client = TestClient(app)
@@ -104,17 +105,35 @@ def test_la_sesion_indica_el_territorio():
     assert u["distrito"] == "LIRCAY"
 
 
-def test_la_jass_no_es_una_puerta_del_tablero():
-    """El tablero es de las instituciones y de la población; la JASS, de la app."""
-    from app.enums import GRUPOS_DEL_TABLERO, GrupoRol, RolUsuario, usa_el_tablero
+# Quienes no trabajan en el tablero, y por qué:
+#   la JASS mide en el cerro desde la app; el vecino consulta la página
+#   pública con el QR del aviso, sin cuenta.
+FUERA_DEL_TABLERO = (RolUsuario.OPERADOR, RolUsuario.DIRECTIVO_JASS,
+                     RolUsuario.POBLACION)
+
+
+def test_el_tablero_es_solo_de_quien_decide_en_una_oficina():
+    from app.enums import GRUPOS_DEL_TABLERO, GrupoRol, usa_el_tablero
 
     assert GrupoRol.JASS not in GRUPOS_DEL_TABLERO
-    assert not usa_el_tablero(RolUsuario.OPERADOR)
-    assert not usa_el_tablero(RolUsuario.DIRECTIVO_JASS)
+    assert GrupoRol.USUARIO not in GRUPOS_DEL_TABLERO
+    for rol in FUERA_DEL_TABLERO:
+        assert not usa_el_tablero(rol), rol
     # Ningún otro rol queda fuera por descuido.
     for rol in RolUsuario:
-        if rol not in (RolUsuario.OPERADOR, RolUsuario.DIRECTIVO_JASS):
+        if rol not in FUERA_DEL_TABLERO:
             assert usa_el_tablero(rol), rol
+
+
+def test_el_vecino_no_necesita_cuenta_para_saber_si_puede_beber():
+    """La página pública responde sin credenciales: es la puerta del vecino."""
+    r = client.get("/publico/comunidad/1")
+    assert r.status_code == 200
+    assert "text/html" in r.headers["content-type"]
+
+    r = client.get("/publico/comunidad/1/estado")
+    assert r.status_code == 200
+    assert r.json()["nivel"] is not None
 
 
 def test_la_jass_sigue_entrando_por_la_app():

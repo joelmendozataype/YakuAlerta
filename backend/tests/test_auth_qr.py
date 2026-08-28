@@ -142,8 +142,9 @@ def test_el_directivo_jass_tampoco_vincula(qr):
     h = {"Authorization": f"Bearer {d.json()['access_token']}"}
     client.post(f"/auth/qr/{token}/escanear", headers=h)
     client.post(f"/auth/qr/{token}/confirmar", headers=h, json={"aprobar": True})
-    assert client.post(f"/auth/qr/{token}/reclamar",
-                       json={"client_secret": client_secret}).status_code == 403
+    r = client.post(f"/auth/qr/{token}/reclamar", json={"client_secret": client_secret})
+    assert r.status_code == 403
+    assert "app móvil" in r.json()["detail"]
 
 
 def test_salud_si_vincula_su_dispositivo(qr):
@@ -155,3 +156,16 @@ def test_salud_si_vincula_su_dispositivo(qr):
     r = client.post(f"/auth/qr/{token}/reclamar", json={"client_secret": client_secret})
     assert r.status_code == 200, r.text
     assert r.json()["usuario"]["rol"] == "SALUD"
+
+
+def test_el_vecino_tampoco_vincula_dispositivos_web(qr):
+    """Su rol existe para recibir la alerta, no para navegar un tablero."""
+    token, client_secret = qr
+    v = client.post("/auth/login", json={"telefono": "987000060", "clave": CLAVE})
+    h = {"Authorization": f"Bearer {v.json()['access_token']}"}
+    client.post(f"/auth/qr/{token}/escanear", headers=h)
+    client.post(f"/auth/qr/{token}/confirmar", headers=h, json={"aprobar": True})
+    r = client.post(f"/auth/qr/{token}/reclamar", json={"client_secret": client_secret})
+    assert r.status_code == 403
+    # Se le indica su propia puerta, que no es la de la JASS.
+    assert "QR del aviso" in r.json()["detail"]

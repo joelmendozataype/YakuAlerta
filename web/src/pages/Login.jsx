@@ -4,16 +4,15 @@ import { useAuth } from '../auth'
 import LoginQR from '../components/LoginQR'
 
 /**
- * Grupos de rol que ofrece el tablero.
+ * Grupos de rol que ofrece el tablero: solo quien decide desde una oficina.
  *
- * La JASS no está aquí: opera en el cerro con el celular, sin señal y sin
- * computadora. Todo lo suyo ocurre en la app móvil. El tablero es para quien
- * decide desde una oficina, y para la población que consulta su agua.
+ * Faltan dos a propósito. La JASS opera en el cerro con el celular, sin señal
+ * y sin computadora. Y el vecino no necesita cuenta: escanea el QR del aviso
+ * fijado en el punto de agua y lee la página pública, sin registrarse.
  */
 const GRUPOS = [
   { valor: 'ATM', etiqueta: 'ATM (Autoridad Local)', dni: '70100020' },
   { valor: 'IPRESS_SALUD', etiqueta: 'IPRESS / SALUD', dni: '70100040' },
-  { valor: 'USUARIO', etiqueta: 'USUARIO (Vecino)', dni: '70100060' },
   { valor: 'DESA', etiqueta: 'DESA (Autoridad Sanitaria)', dni: '70100030' },
   { valor: 'DRVCS', etiqueta: 'DRVCS (Saneamiento)', dni: '70100070' },
   { valor: 'ADMIN', etiqueta: 'Administrador del sistema', dni: '70100099' },

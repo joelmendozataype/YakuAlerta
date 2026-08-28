@@ -50,7 +50,6 @@ export const api = {
   silencio: () => request('/reportes/silencio'),
   // Directorio de JASS del distrito (una junta por comunidad).
   jass: () => request('/admin/jass'),
-  estadoPublico: (comunidadId) => request(`/publico/comunidad/${comunidadId}/estado`),
   // Afiche comunitario imprimible con QR (para fijar en el punto de agua)
   avisoComunitario: (comunidadId) =>
     request(`/avisos/comunidad/${comunidadId}`, { blob: true }),

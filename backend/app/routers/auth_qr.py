@@ -33,7 +33,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..deps import sesion_actual_id, usuario_actual
-from ..enums import EstadoQR, usa_el_tablero
+from ..enums import EstadoQR, RolUsuario, usa_el_tablero
 from ..models import Auditoria, SesionQR, Usuario
 from ..schemas import (
     QRConfirmarIn, QREstadoOut, QRNuevaIn, QRNuevaOut,
@@ -47,6 +47,24 @@ router = APIRouter(prefix="/auth/qr", tags=["auth-qr"])
 
 VIGENCIA_SEG = 120          # igual que WhatsApp Web: obliga a refrescar el código
 PREFIJO_QR = "YAKU-QR"      # la app rechaza cualquier QR sin este prefijo
+
+
+# Por qué cada rol no vincula un dispositivo web: la razón no es la misma y
+# el mensaje debe decirle a la persona qué hacer en su lugar.
+_SIN_TABLERO = {
+    RolUsuario.OPERADOR: (
+        "La JASS trabaja desde la app móvil, que funciona sin señal. "
+        "El tablero web es para las instituciones."
+    ),
+    RolUsuario.DIRECTIVO_JASS: (
+        "La JASS trabaja desde la app móvil, que funciona sin señal. "
+        "El tablero web es para las instituciones."
+    ),
+    RolUsuario.POBLACION: (
+        "No necesita vincular ningún dispositivo: escanee el QR del aviso "
+        "fijado en el punto de agua y verá el estado sin iniciar sesión."
+    ),
+}
 
 
 def _sha256(texto: str) -> str:
@@ -162,16 +180,13 @@ def reclamar(token: str, client_secret: str = Body(..., embed=True),
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Usuario inactivo")
 
     # El QR vincula un dispositivo al tablero, así que solo lo reclama quien
-    # tiene algo que hacer allí. La JASS trabaja en la app: dejarla entrar por
-    # esta puerta sería reabrir el acceso que el tablero ya no le ofrece.
+    # tiene algo que hacer allí. Sin esta comprobación, quien ya no encuentra
+    # su rol en el formulario de ingreso lo reabriría escaneando desde su app.
     if not usa_el_tablero(usuario.rol):
         sesion.estado = EstadoQR.RECHAZADO
         db.commit()
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN,
-            "La JASS trabaja desde la app móvil; el tablero web es para las "
-            "instituciones. No necesita vincular este dispositivo.",
-        )
+        raise HTTPException(status.HTTP_403_FORBIDDEN, _SIN_TABLERO.get(
+            usuario.rol, "Su rol no trabaja en el tablero web."))
 
     sesion.estado = EstadoQR.CONSUMIDA      # un solo uso
     db.add(Auditoria(
