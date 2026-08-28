@@ -7,6 +7,9 @@ import Alertas from './pages/Alertas'
 import Laboratorio from './pages/Laboratorio'
 import Reportes from './pages/Reportes'
 import MiAgua from './pages/MiAgua'
+import VigilanciaSalud from './pages/VigilanciaSalud'
+import Priorizacion from './pages/Priorizacion'
+import InicioDesa from './pages/InicioDesa'
 
 function Privada({ children }) {
   const { user } = useAuth()
@@ -14,10 +17,19 @@ function Privada({ children }) {
   return <Layout>{children}</Layout>
 }
 
-/** Elige el inicio según el rol de la sesión. */
+/**
+ * Elige el inicio según el rol: cada perfil entra directamente a la pregunta
+ * que su función necesita responder, no a un tablero genérico.
+ */
 function InicioSegunRol() {
   const { user } = useAuth()
-  return user?.rol === 'POBLACION' ? <MiAgua /> : <Tablero />
+  switch (user?.rol) {
+    case 'POBLACION': return <MiAgua />              // ¿puedo tomar el agua hoy?
+    case 'SALUD': return <VigilanciaSalud />         // ¿a quién debo vigilar?
+    case 'DRVCS': return <Priorizacion />            // ¿dónde invertir?
+    case 'DESA': return <InicioDesa />               // ¿qué caso requiere dictamen?
+    default: return <Tablero />                      // ATM, JASS y administración
+  }
 }
 
 export default function App() {

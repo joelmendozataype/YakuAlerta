@@ -260,6 +260,7 @@ class SemaforoComunidad(BaseModel):
     via_recepcion: EstadoSync | None = None
     silencio: bool = False
     dias_sin_medir: int | None = None
+    poblacion_servida: int | None = None
 
 
 class TableroResumen(BaseModel):
@@ -268,6 +269,9 @@ class TableroResumen(BaseModel):
     porcentaje_agua_segura: float
     alertas_activas: int
     reservorios_en_silencio: int
+    # Personas que hoy reciben agua clasificada como no segura: convierte el
+    # semáforo en una magnitud sanitaria comprensible.
+    poblacion_expuesta: int = 0
     comunidades: list[SemaforoComunidad]
 
 

@@ -4,13 +4,23 @@ import { useAuth } from '../auth'
 // Cada sección declara qué roles pueden usarla: el menú no ofrece opciones
 // que el servidor luego rechazaría.
 const NAV = [
-  { to: '/', label: 'Tablero', icon: '📊', end: true, roles: null },
-  { to: '/alertas', label: 'Alertas', icon: '🔔', roles: null },
+  // El inicio cambia de nombre según lo que el rol encuentra allí.
+  { to: '/', label: 'Inicio', icon: '📊', end: true, roles: null },
+  { to: '/alertas', label: 'Alertas', icon: '🔔', roles: ['ATM', 'DESA', 'ADMIN', 'SALUD', 'DRVCS', 'OPERADOR', 'DIRECTIVO_JASS'] },
   { to: '/laboratorio', label: 'Laboratorio', icon: '🧪', roles: ['DESA', 'ATM', 'ADMIN'] },
   { to: '/reportes', label: 'Reportes', icon: '📄', roles: ['ATM', 'DESA', 'DRVCS', 'ADMIN'] },
 ]
 
 const puedeVer = (item, rol) => item.roles === null || item.roles.includes(rol)
+
+// Nombre del inicio según el rol: describe lo que el usuario encontrará.
+const INICIO = {
+  POBLACION: 'Mi agua',
+  SALUD: 'Vigilancia',
+  DRVCS: 'Priorización',
+  DESA: 'Casos abiertos',
+}
+const etiquetaInicio = (item, rol) => (item.to === '/' ? INICIO[rol] ?? 'Tablero' : item.label)
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth()
@@ -34,7 +44,7 @@ export default function Layout({ children }) {
                   `px-3 py-2 rounded-lg text-sm font-medium transition ${
                     isActive ? 'bg-agua-900 text-white' : 'text-agua-100 hover:bg-agua-700'
                   }`}>
-                <span className="mr-1">{n.icon}</span>{n.label}
+                <span className="mr-1">{n.icon}</span>{etiquetaInicio(n, user?.rol)}
               </NavLink>
             ))}
           </nav>
@@ -57,7 +67,7 @@ export default function Layout({ children }) {
                 `px-3 py-1.5 rounded-lg text-sm whitespace-nowrap ${
                   isActive ? 'bg-agua-900' : 'bg-agua-700'
                 }`}>
-              {n.icon} {n.label}
+              {n.icon} {etiquetaInicio(n, user?.rol)}
             </NavLink>
           ))}
         </nav>

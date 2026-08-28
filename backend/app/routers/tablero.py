@@ -58,6 +58,7 @@ def resumen_distrito(ubigeo_id: int, db: Session = Depends(get_db),
                 nivel=nivel, ultima_medicion=ultima.fecha_hora if ultima else None,
                 via_recepcion=ultima.estado_sync if ultima else None,
                 silencio=silencio, dias_sin_medir=dias,
+                poblacion_servida=c.poblacion_servida,
             )
             if sev[nivel] > peor_sev:
                 peor_sev, peor = sev[nivel], item
@@ -73,6 +74,10 @@ def resumen_distrito(ubigeo_id: int, db: Session = Depends(get_db),
         .scalar()
     )
 
+    # Personas expuestas: las de las comunidades cuyo peor reservorio está en rojo.
+    expuesta = sum(x.poblacion_servida or 0
+                   for x in semaforo if x.nivel == NivelRiesgo.ROJO)
+
     pct = round(100.0 * seguras / total_reservorios, 1) if total_reservorios else 0.0
     return TableroResumen(
         distrito=ubigeo.distrito,
@@ -80,6 +85,7 @@ def resumen_distrito(ubigeo_id: int, db: Session = Depends(get_db),
         porcentaje_agua_segura=pct,
         alertas_activas=alertas_activas or 0,
         reservorios_en_silencio=en_silencio,
+        poblacion_expuesta=expuesta,
         comunidades=semaforo,
     )
 
