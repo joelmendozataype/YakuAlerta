@@ -33,15 +33,31 @@ class _ResultadoScreenState extends State<ResultadoScreen> {
   NivelRiesgo get _nivel => widget.resultado.nivel;
   Color get _color => YakuColors.deNivel(_nivel);
 
+  /// Vuelve a la lista de reservorios.
+  ///
+  /// Enviada la medición, esta pantalla ya no tiene nada que ofrecer: el
+  /// operador suele tener otro reservorio que medir, y dejarlo aquí lo obliga
+  /// a buscar el botón de volver con las manos ocupadas. El aviso de envío se
+  /// muestra con el mensajero de la app, así que sigue viéndose ya en el inicio.
+  void _volverAlInicio() {
+    if (!mounted) return;
+    if (Navigator.canPop(context)) Navigator.pop(context);
+  }
+
+  void _avisar(String texto, {Color? color}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(texto), backgroundColor: color));
+  }
+
   Future<void> _sincronizarOSms() async {
     setState(() => _procesando = true);
     final r = await SyncService.instance.sincronizar();
     if (!mounted) return;
     setState(() => _procesando = false);
     if (r != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Enviado. ${r.alertas} alerta(s) generada(s).'),
-        backgroundColor: YakuColors.verde));
+      _avisar('Enviado. ${r.alertas} alerta(s) generada(s).',
+          color: YakuColors.verde);
+      _volverAlInicio();
     } else {
       _enviarSms();
     }
@@ -54,16 +70,20 @@ class _ResultadoScreenState extends State<ResultadoScreen> {
       await ApiClient.instance.enviarSms(texto);
       await LocalDb.instance.marcarEstado(widget.medicion.uuidRegistro, EstadoSync.enviadoSms);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Enviado por SMS estructurado (modo sin datos).')));
+      _avisar('Enviado por SMS estructurado (modo sin datos).',
+          color: YakuColors.verde);
+      _volverAlInicio();
     } catch (_) {
       if (!mounted) return;
-      showDialog(context: context, builder: (_) => AlertDialog(
+      // Sin vía disponible: la medición ya quedó guardada y se enviará sola al
+      // recuperar señal. Se le entrega el texto por si no quiere esperar.
+      await showDialog(context: context, builder: (_) => AlertDialog(
         title: const Text('SMS de respaldo'),
         content: SelectableText(
           'Sin conexión de datos. Envía este SMS a la pasarela Yakuni:\n\n$texto'),
         actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Entendido'))],
       ));
+      _volverAlInicio();
     }
   }
 
