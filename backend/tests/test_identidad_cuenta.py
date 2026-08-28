@@ -6,6 +6,7 @@ como «JASS COM-01», «Jass com 01» y «JASS de la comunidad 01», y el padró
 dejaría de poder agruparse por entidad.
 """
 import random
+import uuid
 
 from fastapi.testclient import TestClient
 
@@ -39,6 +40,11 @@ def _alta(headers: dict, rol: str, **extra):
               "clave": "clave12345", "rol": rol}
     cuerpo.update(extra)
     return client.post("/admin/usuarios", headers=headers, json=cuerpo)
+
+
+def _nombre_libre() -> str:
+    """Un nombre de comunidad que ninguna otra prueba pudo haber creado."""
+    return f"COM-{uuid.uuid4().hex[:8].upper()}"
 
 
 def _comunidad(headers: dict, nombre: str = "COM-01") -> dict:
@@ -132,3 +138,75 @@ def test_el_admin_ve_un_ejemplo_concreto_pese_a_no_tener_distrito():
     actores = {a["actor"]: a for a in client.get("/admin/actores", headers=_admin()).json()}
     assert "su distrito" not in actores["ATM"]["entidad_ejemplo"]
     assert actores["ATM"]["entidad_ejemplo"].startswith("Municipalidad Distrital de ")
+
+
+# ─── La comunidad se escribe a mano al registrar la JASS ─────────
+def test_registrar_una_jass_nueva_crea_su_comunidad_y_su_reservorio():
+    """Las comunidades varían y no hay padrón: se escriben al dar de alta.
+
+    Una comunidad, su junta y su primer reservorio nacen juntos porque son la
+    misma cosa: no existe una JASS sin comunidad, ni una comunidad sin sistema
+    de agua que vigilar.
+    """
+    h = _atm()
+    nombre = _nombre_libre()
+    r = _alta(h, "OPERADOR", comunidad_nombre=nombre)
+    assert r.status_code == 201, r.text
+
+    d = r.json()
+    assert d["comunidad"] == nombre
+    assert d["comunidad_creada"] == nombre
+    assert d["entidad"] == f"JASS {nombre}"
+    assert d["reservorio_creado"] == f"R{d['reservorio_creado'].split('-')[0][1:]}-LIRCAY-{nombre}"
+    assert d["distrito"] == "LIRCAY"
+
+
+def test_una_comunidad_ya_registrada_se_reutiliza():
+    """Escribir el nombre de una existente suma la cuenta a esa junta."""
+    h = _atm()
+    r = _alta(h, "OPERADOR", comunidad_nombre="COM-01")
+    assert r.status_code == 201, r.text
+    d = r.json()
+    assert d["comunidad"] == "COM-01"
+    assert d["comunidad_creada"] is None      # no se duplicó
+    assert d["reservorio_creado"] is None     # ni se creó otro reservorio
+    assert d["entidad"] == "JASS COM-01"
+
+
+def test_el_nombre_se_compara_sin_reparar_en_mayusculas_ni_espacios():
+    """«com-01», «COM-01» y «COM 01 » son la misma: admitirlas crearía copias."""
+    h = _atm()
+    for variante in ("com-01", "  COM-01  ", "Com-01"):
+        d = _alta(h, "OPERADOR", comunidad_nombre=variante).json()
+        assert d["comunidad"] == "COM-01", variante
+        assert d["comunidad_creada"] is None, variante
+
+
+def test_una_comunidad_sin_nombre_se_rechaza():
+    r = _alta(_atm(), "OPERADOR", comunidad_nombre="   ")
+    assert r.status_code == 422
+    assert "nombre de la comunidad" in r.json()["detail"]
+
+
+def test_el_admin_debe_indicar_en_que_distrito_va_la_comunidad():
+    """Sin distrito, «COM-04» no dice a cuál de los doce pertenece."""
+    r = _alta(_admin(), "OPERADOR", comunidad_nombre=_nombre_libre())
+    assert r.status_code == 422, r.text
+    assert "distrito" in r.json()["detail"]
+
+
+def test_el_reservorio_nace_pendiente_de_completar():
+    """Su volumen aún no se conoce: se registra después, desde «JASS»."""
+    h = _atm()
+    nombre = _nombre_libre()
+    codigo = _alta(h, "OPERADOR", comunidad_nombre=nombre).json()["reservorio_creado"]
+    reservorio = next(r for r in client.get("/admin/reservorios", headers=h).json()
+                      if r["codigo"] == codigo)
+    assert reservorio["estado_infra"] == "Por registrar"
+
+
+def test_una_comunidad_nueva_solo_nace_con_su_jass():
+    """Es la junta quien administra el sistema: sin ella nadie mediría."""
+    r = _alta(_atm(), "POBLACION", comunidad_nombre=_nombre_libre())
+    assert r.status_code == 422, r.text
+    assert "al dar de alta su JASS" in r.json()["detail"]

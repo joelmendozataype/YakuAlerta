@@ -71,3 +71,59 @@ def exigir_territorio(rol: RolUsuario, comunidad_id: int | None) -> None:
             "Esta cuenta es de alcance distrital o regional: no se asigna a una "
             "sola comunidad, o quedaría fuera de las demás.",
         )
+
+
+def resolver_comunidad(db: Session, ubigeo_id: int | None, nombre: str,
+                       rol: RolUsuario):
+    """Busca la comunidad por su nombre dentro del distrito, o la crea.
+
+    Devuelve ``(comunidad, creada, reservorio)``. Al crearla nace también su
+    JASS —la relación es 1:1— y su primer reservorio, cuyo código arma el
+    sistema con la estructura acordada.
+
+    La búsqueda ignora mayúsculas y espacios sobrantes: «com-01», «COM-01» y
+    «COM 01 » son la misma comunidad, y admitir las tres crearía duplicados
+    que después nadie sabría cuál es cuál.
+    """
+    from ..models import Reservorio
+    from .codigo_reservorio import _normalizar, siguiente_codigo
+
+    if ubigeo_id is None:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "Indique el distrito al que pertenece la comunidad.",
+        )
+    limpio = " ".join(nombre.split())
+    if not limpio:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY, "Escriba el nombre de la comunidad.")
+
+    clave = _normalizar(limpio)
+    for c in db.query(Comunidad).filter(Comunidad.ubigeo_id == ubigeo_id):
+        if _normalizar(c.nombre) == clave:
+            return c, False, None
+
+    # Una comunidad nace con su JASS, no con otro rol: es la junta la que
+    # administra el sistema de agua, y sin ella la comunidad no tendría quién
+    # mida su reservorio.
+    if rol not in (RolUsuario.OPERADOR, RolUsuario.DIRECTIVO_JASS):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"La comunidad «{limpio}» aún no está registrada. Se registra al dar "
+            f"de alta su JASS, que es quien administra su sistema de agua.",
+        )
+
+    comunidad = Comunidad(ubigeo_id=ubigeo_id, nombre=limpio,
+                          jass_nombre=f"JASS {limpio}")
+    db.add(comunidad)
+    db.flush()
+
+    reservorio = Reservorio(
+        comunidad_id=comunidad.comunidad_id,
+        codigo=siguiente_codigo(db, comunidad),
+        volumen_m3=0, tipo_sistema="Gravedad",
+        estado_infra="Por registrar", umbral_silencio_dias=7,
+    )
+    db.add(reservorio)
+    db.flush()
+    return comunidad, True, reservorio

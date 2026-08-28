@@ -51,6 +51,9 @@ class UsuarioOut(BaseModel):
     distrito: str | None = None
     comunidad: str | None = None
     activo: bool = True
+    # Solo al registrar: qué territorio quedó creado junto con la cuenta.
+    comunidad_creada: str | None = None
+    reservorio_creado: str | None = None
 
 
 # ─── Recuperación de clave ──────────────────────────────────────
@@ -202,6 +205,11 @@ class UsuarioIn(BaseModel):
     clave: str
     rol: RolUsuario
     entidad: str | None = None   # solo se respeta si viene explícita
+    # Nombre de la comunidad, escrito a mano. Las comunidades varían de
+    # distrito en distrito y no hay padrón del que leerlas, así que al dar de
+    # alta una JASS se escribe la suya: si aún no existe, nace con su junta y
+    # su primer reservorio, cuyo código arma el sistema.
+    comunidad_nombre: str | None = None
     # Ámbito territorial (RF-06). Vacíos = alcance regional.
     ubigeo_id: int | None = None
     comunidad_id: int | None = None

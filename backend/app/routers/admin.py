@@ -36,7 +36,7 @@ from ..schemas import (
 )
 from ..rules.escalamiento import ambito_de
 from ..services.codigo_reservorio import siguiente_codigo
-from ..services.identidad import entidad_de, exigir_territorio
+from ..services.identidad import entidad_de, exigir_territorio, resolver_comunidad
 from ..services.directorio_jass import listar_jass
 from ..services.perfil import perfil_de
 from ..models import Auditoria
@@ -244,6 +244,15 @@ def crear_usuario(datos: UsuarioIn, db: Session = Depends(get_db),
         # La cuenta nace en el distrito de quien la registra.
         datos.ubigeo_id = usuario.ubigeo_id
 
+    # La comunidad puede llegar escrita a mano: si aún no existe en ese
+    # distrito, nace con su JASS y su primer reservorio.
+    creada = reservorio = None
+    if datos.comunidad_id is None and datos.comunidad_nombre:
+        comunidad, nueva, reservorio = resolver_comunidad(
+            db, datos.ubigeo_id, datos.comunidad_nombre, datos.rol)
+        datos.comunidad_id = comunidad.comunidad_id
+        creada = comunidad.nombre if nueva else None
+
     # El territorio que exige su ámbito, y la entidad que de él se desprende.
     exigir_territorio(datos.rol, datos.comunidad_id)
     comunidad = db.get(Comunidad, datos.comunidad_id) if datos.comunidad_id else None
@@ -260,7 +269,11 @@ def crear_usuario(datos: UsuarioIn, db: Session = Depends(get_db),
     db.add(u)
     _commit(db)
     db.refresh(u)
-    return perfil_de(db, u)
+
+    salida = perfil_de(db, u)
+    salida.comunidad_creada = creada
+    salida.reservorio_creado = reservorio.codigo if reservorio and creada else None
+    return salida
 
 
 # ─── Asignaciones operador ↔ reservorio ─────────────────────────

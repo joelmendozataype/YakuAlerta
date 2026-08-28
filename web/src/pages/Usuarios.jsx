@@ -19,7 +19,7 @@ const ACTORES_DE_CAMPO = ['JASS', 'USUARIO']
 
 const vacio = {
   nombres: '', dni: '', telefono: '', clave: '',
-  rol: 'OPERADOR', comunidad_id: '',
+  rol: 'OPERADOR', ubigeo_id: '', comunidad_nombre: '',
 }
 
 // Qué territorio pide cada ámbito, dicho para quien registra la cuenta.
@@ -29,7 +29,7 @@ const AMBITO = {
   regional: 'Alcance regional: no se asigna a un territorio.',
 }
 
-function Formulario({ esAdmin, actores, comunidades, onCreado, onCancelar }) {
+function Formulario({ esAdmin, actores, comunidades, ubigeos, onCreado, onCancelar }) {
   const [f, setF] = useState(vacio)
   const [error, setError] = useState('')
   const [guardando, setGuardando] = useState(false)
@@ -40,44 +40,50 @@ function Formulario({ esAdmin, actores, comunidades, onCreado, onCancelar }) {
     (a) => esAdmin || ACTORES_DE_CAMPO.includes(a.grupo),
   )
 
-  // Las comunidades se registran a mano y cuelgan de su distrito, así que la
-  // lista se agrupa por él. Con un solo distrito el encabezado sobra.
-  const porDistrito = comunidades.reduce((mapa, c) => {
-    const clave = c.distrito || 'Sin distrito'
-    ;(mapa[clave] ||= []).push(c)
-    return mapa
-  }, {})
-  const variosDistritos = Object.keys(porDistrito).length > 1
 
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
 
-  // El actor elegido decide qué territorio hace falta y cómo se nombrará la
-  // entidad: ninguna de las dos cosas se teclea.
+  // El actor decide qué territorio hace falta: la comunidad solo la escribe
+  // quien trabaja en una; el distrito lo necesita también el ámbito distrital;
+  // el regional no pide ninguno.
   const actor = actores.find((a) => a.rol_principal === f.rol)
   const esComunal = actor?.ambito === 'comunidad'
-  const comunidadElegida = comunidades.find(
-    (c) => String(c.comunidad_id) === String(f.comunidad_id),
+  // Solo la JASS estrena comunidad: es quien administra su sistema de agua.
+  const esJass = actor?.grupo === 'JASS'
+  const pideDistrito = actor?.ambito !== 'regional'
+
+  // La ATM registra siempre en el suyo; el ADMIN elige.
+  const unico = ubigeos.length === 1 ? ubigeos[0] : null
+  const ubigeoId = unico ? unico.ubigeo_id : f.ubigeo_id
+  const distrito = ubigeos.find((u) => String(u.ubigeo_id) === String(ubigeoId))
+
+  // Las comunidades varían y no hay padrón: se escriben. Si ya existe una con
+  // ese nombre en el distrito se reutiliza, y no se crea un reservorio nuevo.
+  const nombreLimpio = f.comunidad_nombre.trim()
+  const yaExiste = comunidades.find(
+    (c) => c.nombre.toLowerCase() === nombreLimpio.toLowerCase()
+      && String(c.ubigeo_id) === String(ubigeoId),
   )
   const entidad = esComunal
-    ? (comunidadElegida
-      ? (comunidadElegida.jass_nombre || `JASS ${comunidadElegida.nombre}`)
-      : null)
+    ? (nombreLimpio ? (yaExiste?.jass_nombre || `JASS ${nombreLimpio}`) : null)
     : actor?.entidad_ejemplo
 
   async function enviar(e) {
     e.preventDefault()
     if (f.dni.length !== 8) return setError('El DNI debe tener 8 dígitos.')
     if (f.clave.length < 8) return setError('La clave debe tener al menos 8 caracteres.')
-    if (esComunal && !f.comunidad_id) return setError('Elija la comunidad donde trabaja.')
+    if (pideDistrito && !ubigeoId) return setError('Elija el distrito.')
+    if (esComunal && !nombreLimpio) return setError('Escriba el nombre de la comunidad.')
     setError('')
     setGuardando(true)
     try {
-      await api.crearUsuario({
+      const creada = await api.crearUsuario({
         ...f,
-        comunidad_id: esComunal ? Number(f.comunidad_id) : null,
+        ubigeo_id: pideDistrito ? Number(ubigeoId) : null,
+        comunidad_nombre: esComunal ? nombreLimpio : null,
       })
+      onCreado(creada)
       setF(vacio)
-      onCreado()
     } catch (err) {
       setError(err.message)
     } finally {
@@ -122,7 +128,7 @@ function Formulario({ esAdmin, actores, comunidades, onCreado, onCancelar }) {
               const nuevo = actores.find((a) => a.rol_principal === e.target.value)
               setF({
                 ...f, rol: e.target.value,
-                comunidad_id: nuevo?.ambito === 'comunidad' ? f.comunidad_id : '',
+                comunidad_nombre: nuevo?.ambito === 'comunidad' ? f.comunidad_nombre : '',
               })
             }}>
             {disponibles.map((a) => (
@@ -134,38 +140,86 @@ function Formulario({ esAdmin, actores, comunidades, onCreado, onCancelar }) {
           )}
         </label>
 
-        {/* La comunidad solo se pide a quien trabaja en una: para los demás
-            sería asignarles una y dejarlos fuera del resto del distrito. */}
+        {/* El territorio va de lo general a lo particular: provincia,
+            distrito y —solo para quien trabaja en una— comunidad. */}
+        {pideDistrito && (
+          <>
+            <div className="block">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Provincia
+              </span>
+              <p className="input mt-1 bg-slate-50 text-slate-600">
+                {distrito?.provincia || ubigeos[0]?.provincia || '—'}
+              </p>
+            </div>
+
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Distrito <span className="text-rojo">*</span>
+              </span>
+              {unico ? (
+                <p className="input mt-1 bg-slate-50 text-slate-600">{unico.distrito}</p>
+              ) : (
+                <select className="input mt-1" value={f.ubigeo_id}
+                  onChange={set('ubigeo_id')} required>
+                  <option value="">Seleccione…</option>
+                  {ubigeos.map((u) => (
+                    <option key={u.ubigeo_id} value={u.ubigeo_id}>{u.distrito}</option>
+                  ))}
+                </select>
+              )}
+            </label>
+          </>
+        )}
+
+        {/* Las comunidades varían de distrito en distrito y no hay padrón del
+            que leerlas: se escriben. Si ya existe una con ese nombre se
+            reutiliza en vez de duplicarla. */}
         {esComunal && (
           <label className="block">
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
               Comunidad <span className="text-rojo">*</span>
             </span>
-            {comunidades.length === 0 ? (
-              <span className="mt-1 block text-xs text-amarillo">
-                Su distrito aún no tiene comunidades. Regístrelas desde «JASS».
-              </span>
-            ) : (
-              <select className="input mt-1" value={f.comunidad_id}
-                onChange={set('comunidad_id')} required>
-                <option value="">Seleccione…</option>
-                {variosDistritos
-                  ? Object.entries(porDistrito).map(([distrito, lista]) => (
-                    <optgroup key={distrito} label={distrito}>
-                      {lista.map((c) => (
-                        <option key={c.comunidad_id} value={c.comunidad_id}>{c.nombre}</option>
-                      ))}
-                    </optgroup>
-                  ))
-                  : comunidades.map((c) => (
-                    <option key={c.comunidad_id} value={c.comunidad_id}>{c.nombre}</option>
-                  ))}
-              </select>
-            )}
+            <input className="input mt-1" value={f.comunidad_nombre}
+              onChange={set('comunidad_nombre')} placeholder="COM-04" required
+              list="comunidades-registradas" />
+            <datalist id="comunidades-registradas">
+              {comunidades
+                .filter((c) => String(c.ubigeo_id) === String(ubigeoId))
+                .map((c) => <option key={c.comunidad_id} value={c.nombre} />)}
+            </datalist>
+            <span className="mt-1 block text-xs text-slate-400">
+              {yaExiste
+                ? 'Ya registrada: la cuenta se suma a esa junta.'
+                : esJass
+                  ? 'Si no existe, se creará con su JASS y su primer reservorio.'
+                  : 'Debe estar registrada: se crea al dar de alta su JASS.'}
+            </span>
           </label>
         )}
 
-        {/* La entidad no se teclea: se desprende del actor y del territorio. */}
+        {/* El reservorio no se nombra: su código lo arma la estructura. */}
+        {esJass && (
+          <div className="block">
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Reservorio
+            </span>
+            <p className="input mt-1 bg-slate-50 text-slate-600 truncate font-mono text-sm">
+              {yaExiste
+                ? '—'
+                : (nombreLimpio && distrito
+                  ? `R#-${distrito.distrito}-${nombreLimpio.toUpperCase()}`
+                  : '—')}
+            </p>
+            <span className="mt-1 block text-xs text-slate-400">
+              {yaExiste
+                ? 'La comunidad ya tiene el suyo.'
+                : 'Se genera con la estructura al registrar.'}
+            </span>
+          </div>
+        )}
+
+        {/* La entidad tampoco se teclea: se desprende del actor y su territorio. */}
         <div className="block">
           <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Entidad
@@ -174,9 +228,7 @@ function Formulario({ esAdmin, actores, comunidades, onCreado, onCancelar }) {
             {entidad || '—'}
           </p>
           <span className="mt-1 block text-xs text-slate-400">
-            {entidad
-              ? 'Se asigna sola, según el actor y su territorio.'
-              : 'Elija la comunidad para saber a qué junta representa.'}
+            Se asigna sola, según el actor y su territorio.
           </span>
         </div>
 
@@ -252,6 +304,8 @@ export default function Usuarios() {
   const esAdmin = user?.rol === 'ADMIN'
 
   const [usuarios, setUsuarios] = useState(null)
+  const [ubigeos, setUbigeos] = useState([])
+  const [creado, setCreado] = useState(null)
   // Los actores se cargan una sola vez y se comparten: la tabla de arriba y
   // cada fila del padrón deben nombrar al mismo actor con la misma palabra.
   const [actores, setActores] = useState(null)
@@ -268,6 +322,7 @@ export default function Usuarios() {
   useEffect(() => {
     cargar()
     api.comunidades().then(setComunidades).catch(() => setComunidades([]))
+    api.ubigeos().then(setUbigeos).catch(() => setUbigeos([]))
   }, [])
 
   async function cambiar(u, payload) {
@@ -318,6 +373,21 @@ export default function Usuarios() {
 
       {error && <div className="card text-rojo">{error}</div>}
 
+      {creado && (
+        <div className="card border-verde bg-verde/5">
+          <h2 className="font-semibold text-slate-800">
+            Se registró la comunidad {creado.comunidad_creada}
+          </h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Junto con la cuenta nació su junta{' '}
+            <strong>{creado.entidad}</strong> y su primer reservorio{' '}
+            <span className="font-mono">{creado.reservorio_creado}</span>. Complete
+            el volumen del reservorio desde la pantalla «JASS».
+          </p>
+          <button className="btn-ghost mt-4" onClick={() => setCreado(null)}>Entendido</button>
+        </div>
+      )}
+
       {temporal && (
         <div className="card border-amarillo bg-amarillo/5">
           <h2 className="font-semibold text-slate-800">Clave provisional generada</h2>
@@ -336,8 +406,14 @@ export default function Usuarios() {
 
       {creando && (
         <Formulario esAdmin={esAdmin} actores={actores} comunidades={comunidades}
+          ubigeos={ubigeos}
           onCancelar={() => setCreando(false)}
-          onCreado={() => { setCreando(false); cargar() }} />
+          onCreado={(u) => {
+            setCreando(false)
+            setCreado(u.comunidad_creada ? u : null)
+            cargar()
+            api.comunidades().then(setComunidades).catch(() => {})
+          }} />
       )}
 
       <div className="card overflow-x-auto p-0">
