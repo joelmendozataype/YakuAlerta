@@ -102,3 +102,26 @@ def test_la_sesion_indica_el_territorio():
     assert u["departamento"] == "HUANCAVELICA"
     assert u["provincia"] == "ANGARAES"
     assert u["distrito"] == "LIRCAY"
+
+
+def test_la_jass_no_es_una_puerta_del_tablero():
+    """El tablero es de las instituciones y de la población; la JASS, de la app."""
+    from app.enums import GRUPOS_DEL_TABLERO, GrupoRol, RolUsuario, usa_el_tablero
+
+    assert GrupoRol.JASS not in GRUPOS_DEL_TABLERO
+    assert not usa_el_tablero(RolUsuario.OPERADOR)
+    assert not usa_el_tablero(RolUsuario.DIRECTIVO_JASS)
+    # Ningún otro rol queda fuera por descuido.
+    for rol in RolUsuario:
+        if rol not in (RolUsuario.OPERADOR, RolUsuario.DIRECTIVO_JASS):
+            assert usa_el_tablero(rol), rol
+
+
+def test_la_jass_sigue_entrando_por_la_app():
+    """Quitarla del tablero no puede quitarle su propio acceso móvil."""
+    r = client.post("/auth/login", json={
+        "dni": "70100001", "clave": CLAVE, "grupo_rol": "JASS"})
+    assert r.status_code == 200, r.text
+    assert r.json()["usuario"]["rol"] == "OPERADOR"
+    # Y llega con sus reservorios para poder medir sin señal.
+    assert len(r.json()["reservorios"]) >= 1

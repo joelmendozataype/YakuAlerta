@@ -18,7 +18,7 @@ def _sha(t: str) -> str:
     return hashlib.sha256(t.encode()).hexdigest()
 
 
-def _auth_movil(telefono: str = "987000001") -> dict:
+def _auth_movil(telefono: str = "987000020") -> dict:
     r = client.post("/auth/login", json={"telefono": telefono, "clave": CLAVE})
     return {"Authorization": f"Bearer {r.json()['access_token']}"}
 
@@ -67,7 +67,7 @@ def test_cerrar_una_sesion_invalida_su_token_al_instante():
 
 
 def test_cerrar_todas_las_sesiones():
-    movil = _auth_movil("987000002")
+    movil = _auth_movil("987000040")
     web1 = _vincular_web(movil)
     web2 = _vincular_web(movil)
 
@@ -81,11 +81,11 @@ def test_cerrar_todas_las_sesiones():
 
 
 def test_no_se_puede_cerrar_la_sesion_de_otro_usuario():
-    movil_a = _auth_movil("987000001")
+    movil_a = _auth_movil("987000020")
     _vincular_web(movil_a)
     sid = client.get("/auth/qr/sesiones/activas", headers=movil_a).json()[0]["sesion_id"]
 
-    movil_b = _auth_movil("987000002")
+    movil_b = _auth_movil("987000040")
     assert client.delete(f"/auth/qr/sesiones/activas/{sid}",
                          headers=movil_b).status_code == 404
 

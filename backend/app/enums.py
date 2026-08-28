@@ -101,3 +101,20 @@ def grupo_de_rol(rol: RolUsuario) -> GrupoRol | None:
         if rol in roles:
             return grupo
     return None
+
+
+# ── Quién trabaja en el tablero web ──────────────────────────────
+# La JASS queda fuera a propósito: opera en el cerro, sin señal y sin
+# computadora. Todo lo suyo ocurre en la app móvil, offline. Quien necesita el
+# tablero es quien decide desde una oficina —y la población, que consulta el
+# estado de su agua desde cualquier navegador.
+GRUPOS_DEL_TABLERO: frozenset[GrupoRol] = frozenset({
+    GrupoRol.ATM, GrupoRol.IPRESS_SALUD, GrupoRol.USUARIO,
+    GrupoRol.DESA, GrupoRol.DRVCS, GrupoRol.ADMIN,
+})
+
+
+def usa_el_tablero(rol: RolUsuario) -> bool:
+    """¿Este rol tiene algo que hacer en el tablero web?"""
+    grupo = grupo_de_rol(rol)
+    return grupo is not None and grupo in GRUPOS_DEL_TABLERO

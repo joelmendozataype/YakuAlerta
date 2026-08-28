@@ -2,6 +2,9 @@
 
 Cubren el camino feliz y las defensas: un solo uso, secreto de cliente,
 rechazo desde la app y estados inválidos.
+
+Quien vincula un dispositivo es quien trabaja en el tablero (ATM, Salud, DESA,
+DRVCS, población). La JASS no: su trabajo ocurre en la app móvil.
 """
 import hashlib
 import secrets
@@ -19,7 +22,7 @@ def _sha(t: str) -> str:
     return hashlib.sha256(t.encode()).hexdigest()
 
 
-def _auth_movil(telefono: str = "987000001") -> dict:
+def _auth_movil(telefono: str = "987000020") -> dict:
     r = client.post("/auth/login", json={"telefono": telefono, "clave": CLAVE})
     assert r.status_code == 200, r.text
     return {"Authorization": f"Bearer {r.json()['access_token']}"}
@@ -58,7 +61,7 @@ def test_flujo_completo_de_vinculacion(qr):
     r = client.post(f"/auth/qr/{token}/reclamar", json={"client_secret": client_secret})
     assert r.status_code == 200, r.text
     assert r.json()["access_token"]
-    assert r.json()["usuario"]["rol"] == "OPERADOR"
+    assert r.json()["usuario"]["rol"] == "ATM"
 
 
 def test_el_codigo_es_de_un_solo_uso(qr):
@@ -103,11 +106,52 @@ def test_escanear_exige_sesion_en_el_movil(qr):
 
 def test_solo_quien_escaneo_puede_confirmar(qr):
     token, _ = qr
-    client.post(f"/auth/qr/{token}/escanear", headers=_auth_movil("987000001"))
-    otro = _auth_movil("987000002")
+    client.post(f"/auth/qr/{token}/escanear", headers=_auth_movil("987000020"))
+    otro = _auth_movil("987000040")
     r = client.post(f"/auth/qr/{token}/confirmar", headers=otro, json={"aprobar": True})
     assert r.status_code == 403
 
 
 def test_token_inexistente(qr):
     assert client.get("/auth/qr/token-que-no-existe").status_code == 404
+
+
+def test_la_jass_no_vincula_dispositivos_web(qr):
+    """El QR no puede reabrir la puerta que el tablero ya no le ofrece."""
+    token, client_secret = qr
+    operador = client.post("/auth/login", json={"telefono": "987000001", "clave": CLAVE})
+    h = {"Authorization": f"Bearer {operador.json()['access_token']}"}
+
+    # Escanea y aprueba desde su app sin problema: el corte llega al final.
+    assert client.post(f"/auth/qr/{token}/escanear", headers=h).status_code == 200
+    assert client.post(f"/auth/qr/{token}/confirmar", headers=h,
+                       json={"aprobar": True}).status_code == 200
+
+    r = client.post(f"/auth/qr/{token}/reclamar", json={"client_secret": client_secret})
+    assert r.status_code == 403
+    assert "app móvil" in r.json()["detail"]
+
+    # La sesión queda inutilizable: no se puede reintentar.
+    r = client.post(f"/auth/qr/{token}/reclamar", json={"client_secret": client_secret})
+    assert r.status_code != 200
+
+
+def test_el_directivo_jass_tampoco_vincula(qr):
+    token, client_secret = qr
+    d = client.post("/auth/login", json={"telefono": "987000010", "clave": CLAVE})
+    h = {"Authorization": f"Bearer {d.json()['access_token']}"}
+    client.post(f"/auth/qr/{token}/escanear", headers=h)
+    client.post(f"/auth/qr/{token}/confirmar", headers=h, json={"aprobar": True})
+    assert client.post(f"/auth/qr/{token}/reclamar",
+                       json={"client_secret": client_secret}).status_code == 403
+
+
+def test_salud_si_vincula_su_dispositivo(qr):
+    """La regla corta a la JASS, no al resto: Salud sí trabaja en el tablero."""
+    token, client_secret = qr
+    h = _auth_movil("987000040")
+    client.post(f"/auth/qr/{token}/escanear", headers=h)
+    client.post(f"/auth/qr/{token}/confirmar", headers=h, json={"aprobar": True})
+    r = client.post(f"/auth/qr/{token}/reclamar", json={"client_secret": client_secret})
+    assert r.status_code == 200, r.text
+    assert r.json()["usuario"]["rol"] == "SALUD"

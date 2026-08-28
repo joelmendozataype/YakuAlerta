@@ -6,11 +6,11 @@ import LoginQR from '../components/LoginQR'
 /**
  * Grupos de rol que ofrece el tablero.
  *
- * Los cuatro primeros son los actores de campo, que también entran desde la
- * app; los tres últimos son los perfiles que solo trabajan en oficina.
+ * La JASS no está aquí: opera en el cerro con el celular, sin señal y sin
+ * computadora. Todo lo suyo ocurre en la app móvil. El tablero es para quien
+ * decide desde una oficina, y para la población que consulta su agua.
  */
 const GRUPOS = [
-  { valor: 'JASS', etiqueta: 'JASS (Vigilancia del Agua)', dni: '70100001' },
   { valor: 'ATM', etiqueta: 'ATM (Autoridad Local)', dni: '70100020' },
   { valor: 'IPRESS_SALUD', etiqueta: 'IPRESS / SALUD', dni: '70100040' },
   { valor: 'USUARIO', etiqueta: 'USUARIO (Vecino)', dni: '70100060' },

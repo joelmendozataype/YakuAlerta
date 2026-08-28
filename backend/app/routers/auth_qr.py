@@ -33,10 +33,10 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..deps import sesion_actual_id, usuario_actual
-from ..enums import EstadoQR, RolUsuario
-from ..models import AsignacionOperador, Auditoria, Reservorio, SesionQR, Usuario
+from ..enums import EstadoQR, usa_el_tablero
+from ..models import Auditoria, SesionQR, Usuario
 from ..schemas import (
-    QRConfirmarIn, QREstadoOut, QRNuevaIn, QRNuevaOut, ReservorioOut,
+    QRConfirmarIn, QREstadoOut, QRNuevaIn, QRNuevaOut,
     SesionVinculadaOut, TokenOut, UsuarioOut,
 )
 from ..services.perfil import perfil_de
@@ -161,6 +161,18 @@ def reclamar(token: str, client_secret: str = Body(..., embed=True),
     if not usuario or not usuario.activo:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Usuario inactivo")
 
+    # El QR vincula un dispositivo al tablero, así que solo lo reclama quien
+    # tiene algo que hacer allí. La JASS trabaja en la app: dejarla entrar por
+    # esta puerta sería reabrir el acceso que el tablero ya no le ofrece.
+    if not usa_el_tablero(usuario.rol):
+        sesion.estado = EstadoQR.RECHAZADO
+        db.commit()
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            "La JASS trabaja desde la app móvil; el tablero web es para las "
+            "instituciones. No necesita vincular este dispositivo.",
+        )
+
     sesion.estado = EstadoQR.CONSUMIDA      # un solo uso
     db.add(Auditoria(
         usuario_id=usuario.usuario_id, accion="LOGIN_QR",
@@ -168,23 +180,16 @@ def reclamar(token: str, client_secret: str = Body(..., embed=True),
         ip_origen=sesion.ip_origen,
     ))
 
-    reservorios: list[Reservorio] = []
-    if usuario.rol == RolUsuario.OPERADOR:
-        reservorios = (
-            db.query(Reservorio)
-            .join(AsignacionOperador, AsignacionOperador.reservorio_id == Reservorio.reservorio_id)
-            .filter(AsignacionOperador.usuario_id == usuario.usuario_id,
-                    AsignacionOperador.vigente.is_(True))
-            .all()
-        )
     db.commit()
 
+    # Sin reservorios: quien mide es la JASS desde la app, y la JASS no
+    # vincula dispositivos web.
     return TokenOut(
         # El sid ata el token a esta sesión: podrá revocarse desde la app.
         access_token=crear_token(usuario.usuario_id, usuario.rol.value,
                                  usuario.nombres, sid=sesion.sesion_qr_id),
         usuario=perfil_de(db, usuario),
-        reservorios=[ReservorioOut.model_validate(r) for r in reservorios],
+        reservorios=[],
     )
 
 
