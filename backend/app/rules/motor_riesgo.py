@@ -29,10 +29,21 @@ PALABRAS_CRITICAS = (
 
 @dataclass(frozen=True)
 class Umbrales:
-    """Umbrales de clasificación (inyectables desde parametro_normativo)."""
-    cloro_verde: float = 0.50   # cloro ≥ este valor → apto (verde)
-    cloro_rojo: float = 0.30    # cloro < este valor → rojo
-    turbidez_rojo: float = 5.0  # turbidez > este valor → rojo
+    """Umbrales de clasificación (inyectables desde parametro_normativo).
+
+    Cada parámetro tiene dos líneas y las dos significan lo mismo en ambos:
+    la primera es el límite del D.S. N.° 031-2010-SA —al cruzarlo el agua ya
+    incumple y hay que actuar—; la segunda es el criterio preventivo del
+    proyecto, más severo, a partir del cual el agua se declara no apta.
+
+    El cloro se lee al revés que la turbidez: menos desinfectante es peor,
+    más partículas son peores. Por eso el rojo del cloro queda por debajo de
+    su amarillo, y el de la turbidez por encima.
+    """
+    cloro_verde: float = 0.50       # cloro ≥ este valor → apto (norma)
+    cloro_rojo: float = 0.30        # cloro < este valor → rojo (proyecto)
+    turbidez_amarillo: float = 5.0  # turbidez > este valor → amarillo (norma)
+    turbidez_rojo: float = 10.0     # turbidez > este valor → rojo (proyecto)
 
 
 UMBRALES_DEFECTO = Umbrales()
@@ -75,9 +86,16 @@ def clasificar(
         motivos.append("Cloro no medido.")
 
     # ── Factor turbidez ──────────────────────────────────────────
-    if turbidez_unt is not None and turbidez_unt > umbrales.turbidez_rojo:
-        nivel = _peor(nivel, NivelRiesgo.ROJO)
-        motivos.append(f"Turbidez {turbidez_unt:.2f} UNT > {umbrales.turbidez_rojo:.0f} UNT (riesgo microbiológico).")
+    # Tres bandas, igual que el cloro: superar el límite de la norma avisa;
+    # superar el del proyecto declara el agua no apta. Antes se pasaba de
+    # verde a rojo de un salto y la JASS no tenía margen para reaccionar.
+    if turbidez_unt is not None:
+        if turbidez_unt > umbrales.turbidez_rojo:
+            nivel = _peor(nivel, NivelRiesgo.ROJO)
+            motivos.append(f"Turbidez {turbidez_unt:.2f} UNT > {umbrales.turbidez_rojo:.0f} UNT (la desinfección deja de ser confiable).")
+        elif turbidez_unt > umbrales.turbidez_amarillo:
+            nivel = _peor(nivel, NivelRiesgo.AMARILLO)
+            motivos.append(f"Turbidez {turbidez_unt:.2f} UNT por encima de {umbrales.turbidez_amarillo:.0f} UNT (excede el límite normativo).")
 
     # ── Factor observación crítica del operador ─────────────────
     if observaciones:

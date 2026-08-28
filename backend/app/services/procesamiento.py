@@ -29,7 +29,8 @@ def cargar_umbrales(db: Session) -> Umbrales:
     return Umbrales(
         cloro_verde=float(cloro.umbral_amarillo) if cloro and cloro.umbral_amarillo else 0.50,
         cloro_rojo=float(cloro.umbral_rojo) if cloro and cloro.umbral_rojo else 0.30,
-        turbidez_rojo=float(turb.umbral_rojo) if turb and turb.umbral_rojo else 5.0,
+        turbidez_amarillo=float(turb.umbral_amarillo) if turb and turb.umbral_amarillo else 5.0,
+        turbidez_rojo=float(turb.umbral_rojo) if turb and turb.umbral_rojo else 10.0,
     )
 
 

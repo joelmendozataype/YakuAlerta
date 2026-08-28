@@ -50,8 +50,10 @@ def _param(db) -> None:
         db.add(ParametroNormativo(parametro="cloro_residual", unidad="mg/L",
                                   umbral_amarillo=0.5, umbral_rojo=0.3))
     if "turbidez" not in existentes:
+        # 5 UNT es el límite del D.S.; 10 es el criterio del proyecto, a
+        # partir del cual las partículas protegen a los patógenos del cloro.
         db.add(ParametroNormativo(parametro="turbidez", unidad="UNT",
-                                  umbral_amarillo=5, umbral_rojo=5))
+                                  umbral_amarillo=5, umbral_rojo=10))
 
 
 def sembrar() -> None:

@@ -274,3 +274,38 @@ def test_la_atm_ve_el_catalogo_acotado_a_su_distrito():
 def test_la_jass_no_ve_el_catalogo_de_actores():
     assert client.get("/admin/actores",
                       headers=_auth("70100001", "JASS")).status_code == 403
+
+
+def test_el_umbral_amarillo_de_turbidez_llega_al_motor():
+    """Cierra el circuito RNF-07: lo que se edita en el panel es lo que clasifica.
+
+    Este campo existía en la pantalla pero el motor no lo leía: se podía mover
+    sin que nada cambiara. La prueba fija que eso no vuelva a pasar.
+    """
+    from app.database import SessionLocal
+    from app.enums import NivelRiesgo
+    from app.rules import clasificar
+    from app.services.procesamiento import cargar_umbrales
+
+    h = _admin()
+    turb = next(p for p in client.get("/parametros", headers=h).json()
+                if p["parametro"] == "turbidez")
+    original = (turb["umbral_amarillo"], turb["umbral_rojo"])
+    try:
+        r = client.patch(f"/parametros/{turb['parametro_id']}", headers=h,
+                         json={"umbral_amarillo": 2.0, "umbral_rojo": 4.0})
+        assert r.status_code == 200, r.text
+
+        db = SessionLocal()
+        try:
+            u = cargar_umbrales(db)
+            assert (u.turbidez_amarillo, u.turbidez_rojo) == (2.0, 4.0)
+            # Con cloro sano, la turbidez decide sola las tres bandas.
+            assert clasificar(0.8, 1.5, umbrales=u).nivel == NivelRiesgo.VERDE
+            assert clasificar(0.8, 3.0, umbrales=u).nivel == NivelRiesgo.AMARILLO
+            assert clasificar(0.8, 5.0, umbrales=u).nivel == NivelRiesgo.ROJO
+        finally:
+            db.close()
+    finally:
+        client.patch(f"/parametros/{turb['parametro_id']}", headers=h,
+                     json={"umbral_amarillo": original[0], "umbral_rojo": original[1]})
