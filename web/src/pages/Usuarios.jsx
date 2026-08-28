@@ -13,19 +13,9 @@ import Actores from '../components/Actores'
  * rechazado, para no hacer perder el tiempo a quien administra.
  */
 
-// Toda cuenta pertenece a uno de los siete actores. Dos de ellos agrupan más
-// de una función, y solo ahí hace falta precisarla: en los demás, el nombre
-// del actor ya dice todo.
-const FUNCION = {
-  OPERADOR: 'Operador · mide el reservorio',
-  DIRECTIVO_JASS: 'Directivo · preside la junta',
-  ATM: 'Área Técnica Municipal',
-  AUTORIDAD_LOCAL: 'Autoridad local',
-}
-
-// Roles que la ATM puede dar de alta; el resto son de alcance regional y los
-// crea solo el ADMIN. El backend lo vuelve a verificar.
-const ROLES_DE_CAMPO = ['OPERADOR', 'DIRECTIVO_JASS', 'AUTORIDAD_LOCAL', 'POBLACION']
+// Actores que la ATM puede dar de alta; los demás son de alcance regional y
+// los registra solo el ADMIN. El backend lo vuelve a verificar.
+const ACTORES_DE_CAMPO = ['JASS', 'USUARIO']
 
 const vacio = {
   nombres: '', dni: '', telefono: '', clave: '',
@@ -37,14 +27,11 @@ function Formulario({ esAdmin, actores, comunidades, onCreado, onCancelar }) {
   const [error, setError] = useState('')
   const [guardando, setGuardando] = useState(false)
 
-  // El desplegable se agrupa por actor: primero se elige a quién representa la
-  // persona y recién después, si el actor tiene más de una, su función.
-  const grupos = actores
-    .map((a) => ({
-      actor: a.actor,
-      roles: a.roles.filter((r) => esAdmin || ROLES_DE_CAMPO.includes(r)),
-    }))
-    .filter((g) => g.roles.length > 0)
+  // Se elige un actor, no un rol interno: son los mismos siete de la tabla de
+  // arriba. Cada uno se registra con su rol principal.
+  const disponibles = actores.filter(
+    (a) => esAdmin || ACTORES_DE_CAMPO.includes(a.grupo),
+  )
 
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
 
@@ -102,12 +89,8 @@ function Formulario({ esAdmin, actores, comunidades, onCreado, onCancelar }) {
             Actor
           </span>
           <select className="input mt-1" value={f.rol} onChange={set('rol')}>
-            {grupos.map((g) => (
-              <optgroup key={g.actor} label={g.actor}>
-                {g.roles.map((r) => (
-                  <option key={r} value={r}>{FUNCION[r] || g.actor}</option>
-                ))}
-              </optgroup>
+            {disponibles.map((a) => (
+              <option key={a.grupo} value={a.rol_principal}>{a.actor}</option>
             ))}
           </select>
         </label>
@@ -170,9 +153,7 @@ function Fila({ u, yo, actorDe, onCambio, onClave }) {
       </td>
       <td className="px-4 py-3 text-sm">
         <p className="font-medium">{actorDe[u.rol] || u.rol}</p>
-        <p className="text-xs text-slate-400">
-          {[FUNCION[u.rol], u.entidad].filter(Boolean).join(' · ')}
-        </p>
+        {u.entidad && <p className="text-xs text-slate-400">{u.entidad}</p>}
       </td>
       <td className="px-4 py-3 text-sm text-slate-500">{u.comunidad || u.distrito || '—'}</td>
       <td className="px-4 py-3">

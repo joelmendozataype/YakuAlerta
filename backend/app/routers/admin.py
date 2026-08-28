@@ -93,11 +93,11 @@ def listar_actores(db: Session = Depends(get_db),
     cuentas = q.all()
 
     salida: list[ActorOut] = []
-    for orden, (grupo, nombre) in enumerate(ACTORES, start=1):
+    for orden, (grupo, nombre, principal) in enumerate(ACTORES, start=1):
         roles = ROLES_POR_GRUPO[grupo]
         suyas = [u for u in cuentas if u.rol in roles]
         salida.append(ActorOut(
-            orden=orden, grupo=grupo, actor=nombre,
+            orden=orden, grupo=grupo, actor=nombre, rol_principal=principal,
             movil=grupo in GRUPOS_DE_LA_APP,
             tablero=grupo in GRUPOS_DEL_TABLERO,
             roles=list(roles),

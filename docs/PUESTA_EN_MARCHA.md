@@ -27,9 +27,22 @@ Esto levanta cuatro contenedores:
 | `api` (FastAPI) | http://localhost:8000 · **/docs** | siembra datos demo al arrancar |
 | `web` (tablero React) | http://localhost:5173 | |
 
-**Login del tablero (demo):**
-- ATM → `987000020` / `yaku2026`
-- DESA → `987000030` · Salud → `987000040` · Admin → `987000099`
+**Login del tablero (demo).** Se elige el actor y se entra con DNI y clave;
+la clave de todas las cuentas de demostración es `yaku2026`.
+
+| Actor | DNI | Entra por |
+|-------|-----|-----------|
+| ATM | `70100020` | app y tablero |
+| IPRESS / Salud | `70100040` | app y tablero |
+| DESA | `70100030` | tablero |
+| DRVCS | `70100070` | tablero |
+| Administrador | `70100099` | tablero |
+| JASS (operadores) | `70100001` · `70100002` · `70100003` | solo la app móvil |
+| Usuario / vecino | `70100060` | solo la app móvil |
+
+La JASS y el vecino no entran al tablero: la primera trabaja en el cerro con el
+celular, sin señal; el segundo consulta el estado de su agua escaneando el QR
+del aviso fijado en el punto de agua, sin cuenta ni clave.
 
 ---
 

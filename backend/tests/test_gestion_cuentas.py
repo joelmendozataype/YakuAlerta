@@ -309,3 +309,21 @@ def test_el_umbral_amarillo_de_turbidez_llega_al_motor():
     finally:
         client.patch(f"/parametros/{turb['parametro_id']}", headers=h,
                      json={"umbral_amarillo": original[0], "umbral_rojo": original[1]})
+
+
+def test_cada_actor_declara_con_que_rol_se_registra():
+    """El alta ofrece un actor, no un rol interno: siete opciones, no nueve."""
+    actores = client.get("/admin/actores", headers=_admin()).json()
+    principales = {a["actor"]: a["rol_principal"] for a in actores}
+    assert principales == {
+        "JASS": "OPERADOR",
+        "ATM": "ATM",
+        "IPRESS / Salud": "SALUD",
+        "Usuario / vecino": "POBLACION",
+        "DESA": "DESA",
+        "DRVCS": "DRVCS",
+        "Administrador": "ADMIN",
+    }
+    # El rol principal siempre pertenece a su propio actor.
+    for a in actores:
+        assert a["rol_principal"] in a["roles"], a["actor"]

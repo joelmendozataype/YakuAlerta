@@ -194,7 +194,8 @@ class ActorOut(BaseModel):
     actor: str
     movil: bool
     tablero: bool
-    roles: list[RolUsuario]
+    rol_principal: RolUsuario      # con el que se registra una cuenta suya
+    roles: list[RolUsuario]        # todos los que agrupa
     cuentas: int
     activas: int
 

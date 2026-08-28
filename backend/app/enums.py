@@ -111,15 +111,22 @@ GRUPOS_DE_LA_APP: frozenset[GrupoRol] = frozenset({
     GrupoRol.JASS, GrupoRol.ATM, GrupoRol.IPRESS_SALUD, GrupoRol.USUARIO,
 })
 
-# Nombre con el que cada actor se presenta, y el orden en que se listan.
-ACTORES: tuple[tuple[GrupoRol, str], ...] = (
-    (GrupoRol.JASS, "JASS"),
-    (GrupoRol.ATM, "ATM"),
-    (GrupoRol.IPRESS_SALUD, "IPRESS / Salud"),
-    (GrupoRol.USUARIO, "Usuario / vecino"),
-    (GrupoRol.DESA, "DESA"),
-    (GrupoRol.DRVCS, "DRVCS"),
-    (GrupoRol.ADMIN, "Administrador"),
+# Nombre con el que cada actor se presenta, el orden en que se listan y el rol
+# con el que se da de alta una cuenta suya.
+#
+# Dos actores admiten un segundo rol —la JASS tiene directivos y la ATM
+# autoridades locales— pero registrar una cuenta no obliga a elegir entre
+# ellos: se da de alta el rol principal, que es el que trabaja a diario. Los
+# otros siguen siendo válidos y reciben la alerta roja; cuando el piloto los
+# necesite, se ajustan sobre la cuenta ya creada.
+ACTORES: tuple[tuple[GrupoRol, str, RolUsuario], ...] = (
+    (GrupoRol.JASS, "JASS", RolUsuario.OPERADOR),
+    (GrupoRol.ATM, "ATM", RolUsuario.ATM),
+    (GrupoRol.IPRESS_SALUD, "IPRESS / Salud", RolUsuario.SALUD),
+    (GrupoRol.USUARIO, "Usuario / vecino", RolUsuario.POBLACION),
+    (GrupoRol.DESA, "DESA", RolUsuario.DESA),
+    (GrupoRol.DRVCS, "DRVCS", RolUsuario.DRVCS),
+    (GrupoRol.ADMIN, "Administrador", RolUsuario.ADMIN),
 )
 
 
