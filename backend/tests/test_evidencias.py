@@ -3,6 +3,9 @@
 La foto respalda lo que una persona vio en el reservorio. Por eso la adjunta
 quien firmó la medición, y la ven quienes deciden con ella. Son imágenes
 georreferenciadas de comunidades: no se exponen más allá (Ley N.° 29733).
+
+Se guarda dentro de la base, no como archivo: si existe la fila, existe la
+foto, y una sola copia de seguridad se lleva todo.
 """
 import io
 import uuid as uuidlib
@@ -66,34 +69,61 @@ def _adjuntar(headers: dict, uuid: str, contenido: bytes | None = None,
 
 
 # ─── Dónde se guarda ─────────────────────────────────────────────
-def test_la_carpeta_no_depende_del_directorio_de_arranque():
-    """Con una ruta relativa, arrancar desde otra carpeta perdía las fotos.
+def test_la_foto_vive_en_la_base_y_no_en_disco():
+    """Respaldar la base sin la carpeta dejaba filas sin imagen."""
+    from app.database import SessionLocal
+    from app.models import EvidenciaFoto
+    from app.routers.evidencias import UPLOAD_DIR
 
-    Peor aún: las escribía fuera de backend/uploads/, que es lo único que el
-    .gitignore excluye, camino de acabar versionadas en el repositorio.
-    """
+    h = _operador()
+    medicion = _medir(h)
+    imagen = _jpeg()
+    antes = len(list(UPLOAD_DIR.glob("*"))) if UPLOAD_DIR.exists() else 0
+
+    r = _adjuntar(h, medicion["uuid_registro"], imagen)
+    assert r.status_code == 201, r.text
+
+    db = SessionLocal()
+    try:
+        fila = (db.query(EvidenciaFoto)
+                  .order_by(EvidenciaFoto.evidencia_id.desc()).first())
+        assert fila.contenido == imagen          # los bytes, tal cual
+        assert fila.tamano_bytes == len(imagen)
+        assert fila.tipo_mime == "image/jpeg"
+        assert fila.ruta_archivo is None         # ya no se escribe nada en disco
+    finally:
+        db.close()
+
+    despues = len(list(UPLOAD_DIR.glob("*"))) if UPLOAD_DIR.exists() else 0
+    assert despues == antes, "no debería haberse creado ningún archivo"
+
+
+def test_la_ruta_heredada_sigue_anclada_al_proyecto():
+    """Las fotos anteriores se leen de disco; su carpeta no puede moverse."""
     from app.routers.evidencias import UPLOAD_DIR
 
     assert UPLOAD_DIR.is_absolute()
     assert UPLOAD_DIR.name == "uploads"
     assert UPLOAD_DIR.parent.name == "backend"
-    assert UPLOAD_DIR.exists()
 
 
-def test_la_foto_queda_en_disco_y_se_puede_recuperar():
+def test_la_foto_se_recupera_byte_a_byte():
     h = _operador()
     medicion = _medir(h)
-    r = _adjuntar(h, medicion["uuid_registro"])
+    imagen = _jpeg()
+    r = _adjuntar(h, medicion["uuid_registro"], imagen)
     assert r.status_code == 201, r.text
 
     evidencias = client.get(f"/mediciones/{medicion['medicion_id']}/evidencias",
                             headers=h).json()
     assert len(evidencias) == 1
     assert evidencias[0]["latitud"] == -12.9833
+    assert evidencias[0]["tamano_bytes"] == len(imagen)
 
     descarga = client.get(evidencias[0]["url"], headers=h)
     assert descarga.status_code == 200
-    assert descarga.headers["content-type"].startswith("image/")
+    assert descarga.headers["content-type"] == "image/jpeg"
+    assert descarga.content == imagen         # lo que entró es lo que sale
 
 
 # ─── Quién puede adjuntar ────────────────────────────────────────
@@ -160,3 +190,30 @@ def test_un_operador_no_ve_la_evidencia_de_otro():
 
 def test_la_evidencia_exige_sesion():
     assert client.get("/evidencias/1").status_code in (401, 403)
+
+
+def test_la_migracion_es_idempotente():
+    """Puede ejecutarse cuantas veces haga falta sin tocar lo ya migrado."""
+    from app.database import SessionLocal
+    from app.migraciones import migrar_evidencia_a_base
+    from app.models import EvidenciaFoto
+
+    db = SessionLocal()
+    try:
+        antes = [(e.evidencia_id, e.tamano_bytes)
+                 for e in db.query(EvidenciaFoto).order_by(EvidenciaFoto.evidencia_id)]
+    finally:
+        db.close()
+
+    migrar_evidencia_a_base()
+    migrar_evidencia_a_base()
+
+    db = SessionLocal()
+    try:
+        despues = [(e.evidencia_id, e.tamano_bytes)
+                   for e in db.query(EvidenciaFoto).order_by(EvidenciaFoto.evidencia_id)]
+        # Ninguna evidencia quedó sin su imagen.
+        assert all(e.contenido for e in db.query(EvidenciaFoto))
+    finally:
+        db.close()
+    assert despues == antes

@@ -1,8 +1,13 @@
 """Subida y consulta de evidencia fotográfica — HU-08 / RF-14.
 
 La foto se sube en una segunda fase, DESPUÉS de que la medición se sincronizó
-(se referencia por su UUID). Se guarda en ``backend/uploads/`` y se registra en
-la tabla ``evidencia_foto``.
+(se referencia por su UUID) y se guarda **dentro de la base**, en la tabla
+``evidencia_foto``.
+
+Antes vivía como archivo en ``uploads/`` con la ruta anotada en la fila, y eso
+partía la evidencia en dos: respaldar la base sin la carpeta dejaba filas
+apuntando a imágenes inexistentes, y un despliegue con disco efímero las
+borraba en cada actualización. Las fotos anteriores siguen leyéndose de disco.
 
 Quién puede qué
 ---------------
@@ -16,14 +21,12 @@ comunidades y no se exponen más allá de eso (Ley N.° 29733).
 """
 from __future__ import annotations
 
-import time
-import uuid as uuidlib
 from pathlib import Path
 
 from fastapi import (
     APIRouter, Depends, File, Form, HTTPException, UploadFile, status,
 )
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -33,14 +36,13 @@ from ..models import EvidenciaFoto, Medicion, Usuario
 
 router = APIRouter(tags=["evidencias"])
 
-# Anclada al paquete, no al directorio desde el que se arrancó el servidor.
-# Con una ruta relativa, arrancar el backend desde la raíz del repositorio
-# escribía las fotos en otra carpeta —fuera del .gitignore, camino de acabar
-# versionadas— y dejaba inaccesibles las ya guardadas.
+# Solo para leer las fotos guardadas antes de este cambio. Anclada al paquete
+# y no al directorio de arranque, porque una ruta relativa las volvía
+# inencontrables según desde dónde se levantara el servidor.
 UPLOAD_DIR = Path(__file__).resolve().parents[2] / "uploads"
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-TIPOS_PERMITIDOS = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
+# El tipo se valida al recibir; ya no hace falta la extensión del archivo.
+TIPOS_PERMITIDOS = {"image/jpeg", "image/png", "image/webp"}
 MAX_BYTES = 5 * 1024 * 1024  # 5 MB (las fotos ya vienen comprimidas del móvil)
 
 
@@ -65,8 +67,7 @@ async def subir_evidencia(
             "La evidencia la adjunta quien tomó la medición: es lo que respalda.",
         )
 
-    ext = TIPOS_PERMITIDOS.get(archivo.content_type or "")
-    if ext is None:
+    if (archivo.content_type or "") not in TIPOS_PERMITIDOS:
         raise HTTPException(
             status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             f"Tipo no permitido: {archivo.content_type}. Use JPEG/PNG/WebP.",
@@ -79,13 +80,11 @@ async def subir_evidencia(
             f"La imagen supera {MAX_BYTES // (1024 * 1024)} MB.",
         )
 
-    nombre = f"{uuid}_{int(time.time())}_{uuidlib.uuid4().hex[:6]}{ext}"
-    ruta = UPLOAD_DIR / nombre
-    ruta.write_bytes(contenido)
-
     evidencia = EvidenciaFoto(
         medicion_id=medicion.medicion_id,
-        ruta_archivo=str(ruta),
+        contenido=contenido,
+        tipo_mime=archivo.content_type,
+        tamano_bytes=len(contenido),
         latitud=latitud,
         longitud=longitud,
     )
@@ -128,10 +127,17 @@ def ver_evidencia(
     if not evidencia:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Evidencia no encontrada")
     _exige_poder_verla(db, usuario, evidencia.medicion_id)
-    ruta = Path(evidencia.ruta_archivo)
-    if not ruta.exists():
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Archivo no disponible")
-    return FileResponse(ruta)
+
+    if evidencia.contenido is not None:
+        return Response(evidencia.contenido,
+                        media_type=evidencia.tipo_mime or "image/jpeg")
+
+    # Guardada antes del cambio: sigue en disco.
+    if evidencia.ruta_archivo:
+        ruta = Path(evidencia.ruta_archivo)
+        if ruta.exists():
+            return FileResponse(ruta)
+    raise HTTPException(status.HTTP_404_NOT_FOUND, "Archivo no disponible")
 
 
 @router.get("/mediciones/{medicion_id}/evidencias")
@@ -146,6 +152,7 @@ def listar_evidencias(
         {
             "evidencia_id": e.evidencia_id,
             "url": f"/evidencias/{e.evidencia_id}",
+            "tamano_bytes": e.tamano_bytes,
             "latitud": float(e.latitud) if e.latitud is not None else None,
             "longitud": float(e.longitud) if e.longitud is not None else None,
             "fecha_hora": e.fecha_hora,

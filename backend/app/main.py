@@ -42,6 +42,10 @@ async def lifespan(app: FastAPI):
     if settings.database_url.startswith("sqlite"):
         from .database import crear_tablas
         crear_tablas()
+    # Lo que create_all no puede hacer: alterar tablas que ya existen y llevar
+    # a la base las evidencias que quedaron como archivos en disco.
+    from .migraciones import migrar_evidencia_a_base
+    migrar_evidencia_a_base()
     # Verificación diaria de silencio de datos (HU-15) a las 06:00.
     scheduler.add_job(_job_silencio, "cron", hour=6, minute=0, id="silencio_diario",
                       replace_existing=True)

@@ -7,8 +7,8 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import (
-    BigInteger, Boolean, CHAR, Date, DateTime, ForeignKey, Integer, Numeric,
-    SmallInteger, String, Text, Uuid, Enum as SAEnum, func,
+    BigInteger, Boolean, CHAR, Date, DateTime, ForeignKey, Integer, LargeBinary,
+    Numeric, SmallInteger, String, Text, Uuid, Enum as SAEnum, func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -148,10 +148,26 @@ class Medicion(Base):
 
 
 class EvidenciaFoto(Base):
+    """Foto que respalda una medición, guardada dentro de la propia base.
+
+    Vivía como archivo en disco con la ruta anotada aquí, y eso partía la
+    evidencia en dos: respaldar la base sin la carpeta dejaba filas apuntando a
+    imágenes inexistentes, y un despliegue con disco efímero las borraba en
+    cada actualización. Guardarla aquí las mantiene juntas: si existe la fila,
+    existe la foto, y una sola copia de seguridad se lleva todo.
+
+    Pesan poco —unos 220 KB ya comprimidas— y son pocas: una por medición con
+    evidencia. Si algún día la vigilancia se vuelve diaria en toda la región,
+    conviene volver a archivos o a almacenamiento de objetos.
+    """
     __tablename__ = "evidencia_foto"
     evidencia_id: Mapped[int] = mapped_column(BigIntPK, primary_key=True)
     medicion_id: Mapped[int] = mapped_column(ForeignKey("medicion.medicion_id"))
-    ruta_archivo: Mapped[str] = mapped_column(String(255))
+    contenido: Mapped[bytes | None] = mapped_column(LargeBinary)
+    tipo_mime: Mapped[str | None] = mapped_column(String(40))
+    tamano_bytes: Mapped[int | None] = mapped_column(Integer)
+    # Solo para las fotos guardadas antes de este cambio, que siguen en disco.
+    ruta_archivo: Mapped[str | None] = mapped_column(String(255))
     latitud: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
     longitud: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
     fecha_hora: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
