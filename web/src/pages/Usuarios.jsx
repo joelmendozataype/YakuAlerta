@@ -16,7 +16,7 @@ import Actores from '../components/Actores'
 // Perfiles de campo que la ATM puede dar de alta.
 const ROLES_DE_CAMPO = [
   { valor: 'OPERADOR', etiqueta: 'Operador (mide el reservorio)' },
-  { valor: 'DIRECTIVO_JASS', etiqueta: 'Directivo JASS' },
+  { valor: 'DIRECTIVO_JASS', etiqueta: 'JASS' },
   { valor: 'AUTORIDAD_LOCAL', etiqueta: 'Autoridad local' },
   { valor: 'POBLACION', etiqueta: 'Promotor comunal' },
 ]
