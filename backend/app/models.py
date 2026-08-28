@@ -66,7 +66,8 @@ class Reservorio(Base):
     __tablename__ = "reservorio"
     reservorio_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     comunidad_id: Mapped[int] = mapped_column(ForeignKey("comunidad.comunidad_id"))
-    codigo: Mapped[str] = mapped_column(String(30), unique=True)
+    # 30 se quedaba corto: «R1-SAN ANTONIO DE ANTAPARCO-COM-01» son 34.
+    codigo: Mapped[str] = mapped_column(String(40), unique=True)
     volumen_m3: Mapped[Decimal] = mapped_column(Numeric(8, 2))
     tipo_sistema: Mapped[str | None] = mapped_column(String(60))
     estado_infra: Mapped[str | None] = mapped_column(String(60))

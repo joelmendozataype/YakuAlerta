@@ -34,6 +34,7 @@ from ..schemas import (
     ActorOut, ClaveTemporalOut, ComunidadIn, ComunidadOut, JassOut, ReservorioIn,
     ReservorioOut, UbigeoOut, UsuarioIn, UsuarioOut, UsuarioPatch,
 )
+from ..services.codigo_reservorio import siguiente_codigo
 from ..services.directorio_jass import listar_jass
 from ..services.perfil import perfil_de
 from ..models import Auditoria
@@ -177,7 +178,12 @@ def crear_reservorio(datos: ReservorioIn, db: Session = Depends(get_db),
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Comunidad no encontrada")
     _exige_su_distrito(usuario, comunidad.ubigeo_id)
 
-    r = Reservorio(**datos.model_dump())
+    campos = datos.model_dump()
+    # El código lo arma el servidor con la estructura acordada; solo se respeta
+    # el enviado si viene explícito (migraciones o cargas históricas).
+    campos["codigo"] = campos.get("codigo") or siguiente_codigo(db, comunidad)
+
+    r = Reservorio(**campos)
     db.add(r)
     _commit(db)
     db.refresh(r)

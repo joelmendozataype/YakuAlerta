@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from ..enums import NivelRiesgo, RolUsuario
-from ..models import Comunidad, Medicion, Reservorio, Usuario
+from ..models import Comunidad, Medicion, Reservorio, Ubigeo, Usuario
 from ..schemas import JassOut, MiembroJass
 from ..timeutils import aware_utc
 
@@ -72,9 +72,11 @@ def listar_jass(db: Session, ubigeo_id: int | None = None) -> list[JassOut]:
             .order_by(Usuario.rol, Usuario.nombres).all()
         )
 
+        ubigeo = db.get(Ubigeo, c.ubigeo_id)
         salida.append(JassOut(
             comunidad_id=c.comunidad_id,
             comunidad=c.nombre,
+            distrito=ubigeo.distrito if ubigeo else None,
             jass_nombre=_nombre_por_defecto(c),
             poblacion_servida=c.poblacion_servida,
             reservorios=len(reservorios),

@@ -368,11 +368,18 @@ def test_la_atm_de_lircay_no_ve_los_otros_once_distritos():
     assert ubigeos[0]["distrito"] == "LIRCAY"
 
 
-def test_solo_lircay_arranca_con_comunidades():
-    """Los once restantes esperan a su ATM: existen, pero aún sin datos."""
-    comunidades = client.get("/admin/comunidades", headers=_admin()).json()
-    assert {c["distrito"] for c in comunidades} == {"LIRCAY"}
-    assert {c["nombre"] for c in comunidades} >= {"COM-01", "COM-02", "COM-03"}
+def test_el_piloto_vive_en_lircay():
+    """Las tres comunidades sembradas pertenecen al distrito del piloto.
+
+    No se afirma que ningún otro distrito tenga comunidades: las pruebas
+    comparten la base y varias registran las suyas. Lo que debe cumplirse es
+    que el piloto esté donde dice estar.
+    """
+    comunidades = {c["nombre"]: c for c in
+                   client.get("/admin/comunidades", headers=_admin()).json()}
+    for nombre in ("COM-01", "COM-02", "COM-03"):
+        assert comunidades[nombre]["distrito"] == "LIRCAY"
+        assert comunidades[nombre]["provincia"] == "ANGARAES"
 
 
 def test_el_codigo_del_reservorio_dice_donde_esta():

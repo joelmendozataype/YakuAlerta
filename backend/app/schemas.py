@@ -159,6 +159,7 @@ class JassOut(BaseModel):
     """Una JASS con lo que la ATM necesita para acompanarla."""
     comunidad_id: int
     comunidad: str
+    distrito: str | None = None
     jass_nombre: str
     poblacion_servida: int | None = None
     reservorios: int
@@ -170,8 +171,14 @@ class JassOut(BaseModel):
 
 
 class ReservorioIn(BaseModel):
+    """Alta de un reservorio.
+
+    El código no se envía: lo arma el servidor con la estructura
+    R{n}-{DISTRITO}-{COMUNIDAD}. Es el rótulo con el que se identifica el
+    tanque en campo, y tecleado a mano cada quien lo escribiría distinto.
+    """
     comunidad_id: int
-    codigo: str
+    codigo: str | None = None
     volumen_m3: float
     tipo_sistema: str | None = None
     estado_infra: str | None = None

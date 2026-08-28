@@ -136,9 +136,15 @@ function AltaComunidad({ ubigeos, onCreada, onCancelar }) {
   )
 }
 
-/** Alta de un reservorio dentro de la comunidad que ya se está mirando. */
+/**
+ * Alta de un reservorio dentro de la comunidad que ya se está mirando.
+ *
+ * No se pide el código: lo arma el servidor con la estructura
+ * R{n}-{DISTRITO}-{COMUNIDAD}. Es el rótulo con el que la JASS identifica el
+ * tanque en campo, y tecleado a mano cada quien lo escribiría distinto.
+ */
 function AltaReservorio({ jass, onCreado, onCancelar }) {
-  const [f, setF] = useState({ codigo: '', volumen_m3: '', tipo_sistema: 'Gravedad' })
+  const [f, setF] = useState({ volumen_m3: '', tipo_sistema: 'Gravedad' })
   const [error, setError] = useState('')
   const [guardando, setGuardando] = useState(false)
 
@@ -149,7 +155,6 @@ function AltaReservorio({ jass, onCreado, onCancelar }) {
     try {
       await api.crearReservorio({
         comunidad_id: jass.comunidad_id,
-        codigo: f.codigo.trim(),
         volumen_m3: Number(f.volumen_m3),
         tipo_sistema: f.tipo_sistema,
         estado_infra: 'Operativo',
@@ -168,9 +173,10 @@ function AltaReservorio({ jass, onCreado, onCancelar }) {
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
         Nuevo reservorio en {jass.comunidad}
       </p>
-      <input className="input" value={f.codigo} required
-        onChange={(e) => setF({ ...f, codigo: e.target.value })}
-        placeholder="Código, p. ej. R4-LIRCAY-COM-04" />
+      <p className="text-xs text-slate-500">
+        El código se genera solo, con la estructura{' '}
+        <span className="font-mono text-slate-600">R#-{jass.distrito || 'DISTRITO'}-{jass.comunidad}</span>.
+      </p>
       <div className="grid grid-cols-2 gap-3">
         <input className="input" type="number" step="0.1" min="0" required
           value={f.volumen_m3} onChange={(e) => setF({ ...f, volumen_m3: e.target.value })}

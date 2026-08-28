@@ -21,6 +21,7 @@ from .models import (
 )
 from .schemas import MedicionIn
 from .security import hash_clave
+from .services.codigo_reservorio import siguiente_codigo
 from .services.registro import registrar_medicion
 
 logging.basicConfig(level=logging.INFO)
@@ -122,7 +123,7 @@ def sembrar() -> None:
         volumenes = [12, 8, 15]
         for i, (nombre, c) in enumerate(comunidades.items(), start=1):
             r = Reservorio(comunidad_id=c.comunidad_id,
-                           codigo=f"R{i}-LIRCAY-{nombre}",
+                           codigo=siguiente_codigo(db, c),
                            volumen_m3=volumenes[i - 1],
                            tipo_sistema="Gravedad", estado_infra="Operativo",
                            umbral_silencio_dias=7)
