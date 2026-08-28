@@ -35,6 +35,23 @@ class EvidenciaService {
     return destino;
   }
 
+  /// Borra del dispositivo una foto que el servidor ya recibió.
+  ///
+  /// Las fotos se acumulaban sin límite en el almacenamiento de la app: cada
+  /// medición con evidencia dejaba su copia para siempre, y el celular de un
+  /// operador rural no sobra en espacio. Una vez que el servidor la guardó y
+  /// la registró, la copia local no aporta nada.
+  ///
+  /// No falla si el archivo ya no está: lo que importa es que deje de ocupar.
+  Future<void> descartarLocal(String ruta) async {
+    try {
+      final archivo = File(ruta);
+      if (await archivo.exists()) await archivo.delete();
+    } catch (_) {
+      // Si el sistema no deja borrarla, la medición ya está a salvo igual.
+    }
+  }
+
   /// Obtiene las coordenadas actuales (bajo demanda). Devuelve null si no hay
   /// permiso o el GPS está desactivado (la evidencia se guarda igual, sin geo).
   Future<Position?> ubicacionActual() async {

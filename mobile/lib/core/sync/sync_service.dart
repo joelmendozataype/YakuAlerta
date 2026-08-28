@@ -1,6 +1,7 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 import '../api/api_client.dart';
+import '../evidencia/evidencia_service.dart';
 import '../db/local_db.dart';
 import '../models/medicion.dart';
 
@@ -70,6 +71,9 @@ class SyncService {
           latitud: m.latitud, longitud: m.longitud,
         );
         await _db.marcarFotoSubida(m.uuidRegistro);
+        // Ya está en el servidor: la copia local solo ocuparía espacio. Se
+        // borra después de marcarla, para no perderla si la marca falla.
+        await EvidenciaService.instance.descartarLocal(m.rutaFoto!);
       } on ApiException {
         // se reintenta luego; no interrumpe la subida del resto
       }

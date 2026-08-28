@@ -10,7 +10,6 @@ import '../../core/models/reservorio.dart';
 import '../../core/notificaciones/recordatorio_service.dart';
 import '../../core/rules/motor_riesgo.dart';
 import '../../core/theme.dart';
-import '../camara_dpd/camara_dpd_screen.dart';
 import '../evidencia/captura_foto_screen.dart';
 import 'resultado_screen.dart';
 
@@ -26,7 +25,9 @@ class _RegistroScreenState extends State<RegistroScreen> {
   final _cloro = TextEditingController();
   final _turbidez = TextEditingController();
   final _obs = TextEditingController();
-  String _metodo = 'MANUAL';
+  // La lectura del comparador siempre es a ojo del operador. La estimación
+  // por cámara está proyectada para la Fase 2 y no se ofrece todavía.
+  static const String _metodo = 'MANUAL';
   bool _guardando = false;
 
   // Evidencia fotográfica georreferenciada (HU-08)
@@ -53,26 +54,6 @@ class _RegistroScreenState extends State<RegistroScreen> {
     }
     if (c == null && t == null) return 'Ingresa al menos el cloro o la turbidez.';
     return null;
-  }
-
-  /// HU-05: abre la cámara, estima el cloro del comparador DPD y lo trae al
-  /// formulario para confirmación/corrección (marca el método CAMARA_DPD).
-  Future<void> _leerConCamara() async {
-    final estimado = await Navigator.push<double?>(
-      context,
-      MaterialPageRoute(builder: (_) => const CamaraDpdScreen()),
-    );
-    if (estimado != null) {
-      setState(() {
-        _cloro.text = estimado.toStringAsFixed(2);
-        _metodo = 'CAMARA_DPD';
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Valor estimado por cámara. Verifícalo o corrígelo antes de guardar.'),
-        ));
-      }
-    }
   }
 
   /// HU-08: captura una foto de evidencia, la comprime (RNF-03) y toma la
@@ -183,14 +164,6 @@ class _RegistroScreenState extends State<RegistroScreen> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             style: const TextStyle(fontSize: 22),
             decoration: const InputDecoration(hintText: '0.00', suffixText: 'mg/L'),
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: _leerConCamara,
-              icon: const Icon(Icons.camera_alt_outlined),
-              label: const Text('Leer con la cámara (DPD)'),
-            ),
           ),
           const SizedBox(height: 16),
           _paso(2, 'Turbidez'),
