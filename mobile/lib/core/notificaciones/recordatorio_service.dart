@@ -43,7 +43,7 @@ class RecordatorioService {
     final cuando = _proximaFecha(diasDesdeHoy, hora);
     await _plugin.zonedSchedule(
       reservorioId, // id único por reservorio
-      'YakuAlerta — Medición semanal',
+      'Yakuni — Medición semanal',
       'Te toca medir el cloro y la turbidez del reservorio $codigoReservorio.',
       cuando,
       const NotificationDetails(android: _canal),

@@ -16,16 +16,20 @@ class RolUsuario(str, enum.Enum):
 
 
 class GrupoRol(str, enum.Enum):
-    """Grupos de rol que el usuario elige al ingresar desde la app.
+    """Grupo de rol que el usuario elige al ingresar.
 
-    Agrupan los roles internos en las cuatro categorías que reconoce la gente
-    en campo. Los perfiles regionales (DESA, DRVCS) y el administrador operan
-    desde el tablero web, por lo que no se ofrecen en el móvil.
+    Agrupa los roles internos en las categorías que la gente reconoce. La app
+    ofrece las cuatro de campo; el tablero web añade los perfiles regionales,
+    que trabajan en oficina.
     """
     JASS = "JASS"                   # Vigilancia del agua
     ATM = "ATM"                     # Autoridad local
     IPRESS_SALUD = "IPRESS_SALUD"   # Establecimiento de salud
     USUARIO = "USUARIO"             # Población usuaria
+    # Perfiles regionales: solo ingresan por el tablero web.
+    DESA = "DESA"                   # Autoridad sanitaria regional
+    DRVCS = "DRVCS"                 # Rectoría regional del saneamiento
+    ADMIN = "ADMIN"                 # Administración del sistema
 
 
 class NivelRiesgo(str, enum.Enum):
@@ -85,6 +89,9 @@ ROLES_POR_GRUPO: dict[GrupoRol, tuple[RolUsuario, ...]] = {
     GrupoRol.ATM: (RolUsuario.ATM, RolUsuario.AUTORIDAD_LOCAL),
     GrupoRol.IPRESS_SALUD: (RolUsuario.SALUD,),
     GrupoRol.USUARIO: (RolUsuario.POBLACION,),
+    GrupoRol.DESA: (RolUsuario.DESA,),
+    GrupoRol.DRVCS: (RolUsuario.DRVCS,),
+    GrupoRol.ADMIN: (RolUsuario.ADMIN,),
 }
 
 

@@ -17,8 +17,8 @@ export function AuthProvider({ children }) {
     return data.usuario
   }
 
-  async function login(telefono, clave) {
-    return establecerSesion(await api.login(telefono, clave))
+  async function login(dni, clave, grupoRol) {
+    return establecerSesion(await api.login(dni, clave, grupoRol))
   }
 
   function logout() {

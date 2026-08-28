@@ -60,7 +60,7 @@ def solicitar(db: Session, dni: str, ip: str | None = None) -> str | None:
 
     notif.enviar(
         CanalNotif.SMS, usuario.telefono,
-        f"YakuAlerta: su código para restablecer la clave es {codigo}. "
+        f"Yakuni: su código para restablecer la clave es {codigo}. "
         f"Vence en {VIGENCIA_MIN} minutos. No lo comparta con nadie.",
     )
     return enmascarar(usuario.telefono)

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'rules/motor_riesgo.dart';
 
-/// Identidad visual YakuAlerta: paleta agua/petróleo + semáforo accesible.
+/// Identidad visual Yakuni: paleta agua/petróleo + semáforo accesible.
 class YakuColors {
   static const agua = Color(0xFF0E7490);
   static const aguaOscuro = Color(0xFF155E75);

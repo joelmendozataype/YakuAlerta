@@ -24,7 +24,7 @@ from .security import hash_clave
 from .services.registro import registrar_medicion
 
 logging.basicConfig(level=logging.INFO)
-log = logging.getLogger("yakualerta.seed")
+log = logging.getLogger("yakuni.seed")
 
 CLAVE_DEMO = "yaku2026"
 
@@ -116,7 +116,7 @@ def sembrar() -> None:
             ("Promotor comunal Comunidad 01", "70100060", "987000060", RolUsuario.POBLACION, "Difusión a la población", cid("Comunidad 01"), ub),
             ("Promotor comunal Comunidad 02", "70100061", "987000061", RolUsuario.POBLACION, "Difusión a la población", cid("Comunidad 02"), ub),
             ("Esp. Saneamiento (DRVCS)", "70100070", "987000070", RolUsuario.DRVCS, "Dir. Reg. Vivienda y Saneamiento", None, None),
-            ("Administrador", "70100099", "987000099", RolUsuario.ADMIN, "YakuAlerta", None, None),
+            ("Administrador", "70100099", "987000099", RolUsuario.ADMIN, "Yakuni", None, None),
         ]
         usuarios = {}
         for nombres, dni, tel, rol, entidad, com_id, ubi_id in usuarios_def:

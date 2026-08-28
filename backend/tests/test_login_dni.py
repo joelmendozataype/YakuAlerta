@@ -75,3 +75,30 @@ def test_el_dni_es_unico_por_usuario():
     dnis = [_login(dni=d, grupo_rol=g).json()["usuario"]["dni"]
             for d, g in [("70100001", "JASS"), ("70100002", "JASS")]]
     assert len(set(dnis)) == 2
+
+
+# ── Perfiles regionales: ingresan al tablero web con su propio grupo ──
+@pytest.mark.parametrize("dni,grupo,rol_esperado", [
+    ("70100030", "DESA", "DESA"),
+    ("70100070", "DRVCS", "DRVCS"),
+    ("70100099", "ADMIN", "ADMIN"),
+])
+def test_ingreso_de_los_perfiles_regionales(dni, grupo, rol_esperado):
+    r = _login(dni=dni, grupo_rol=grupo)
+    assert r.status_code == 200, r.text
+    assert r.json()["usuario"]["rol"] == rol_esperado
+
+
+def test_un_perfil_regional_no_entra_por_un_grupo_de_campo():
+    """La DESA que elige «JASS» recibe el mismo rechazo que cualquiera."""
+    r = _login(dni="70100030", grupo_rol="JASS")
+    assert r.status_code == 403
+    assert "DESA" in r.json()["detail"]
+
+
+def test_la_sesion_indica_el_territorio():
+    """La app y el tablero encabezan sus pantallas con provincia y distrito."""
+    u = _login(dni="70100001", grupo_rol="JASS").json()["usuario"]
+    assert u["departamento"] == "HUANCAVELICA"
+    assert u["provincia"] == "ANGARAES"
+    assert u["distrito"] == "LIRCAY"

@@ -31,9 +31,9 @@ export default function Layout({ children }) {
       <header className="bg-agua-800 text-white shadow">
         <div className="mx-auto max-w-7xl px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">💧</span>
+            <img src="/logo.svg" alt="" className="h-9 w-9" />
             <div>
-              <p className="font-bold leading-tight">YakuAlerta</p>
+              <p className="font-bold leading-tight">Yakuni</p>
               <p className="text-[11px] text-agua-200 leading-tight">Vigilancia del agua · Huancavelica</p>
             </div>
           </div>
@@ -76,7 +76,7 @@ export default function Layout({ children }) {
       <main className="flex-1 mx-auto max-w-7xl w-full px-4 py-6">{children}</main>
 
       <footer className="text-center text-xs text-slate-400 py-4">
-        YakuAlerta · MVP Hackathon Kuska Wiñasun UNH 2026 · D.S. N.° 031-2010-SA
+        Yakuni · MVP Hackathon Kuska Wiñasun UNH 2026 · D.S. N.° 031-2010-SA
       </footer>
     </div>
   )

@@ -1,11 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Permisos YakuAlerta -->
+    <!-- Permisos Yakuni -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>  <!-- HU-08 -->
     <uses-permission android:name="android.permission.CAMERA"/>                 <!-- HU-05 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>     <!-- HU-07 -->
     <application
-        android:label="YakuAlerta"
+        android:label="Yakuni"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">

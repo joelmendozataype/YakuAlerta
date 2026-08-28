@@ -19,7 +19,7 @@ def test_la_pagina_publica_no_exige_credenciales():
     r = client.get("/publico/comunidad/1")
     assert r.status_code == 200
     assert "text/html" in r.headers["content-type"]
-    assert "YakuAlerta" in r.text
+    assert "Yakuni" in r.text
 
 
 def test_la_pagina_publica_es_apta_para_celular():

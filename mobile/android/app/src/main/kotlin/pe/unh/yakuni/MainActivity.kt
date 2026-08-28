@@ -1,4 +1,4 @@
-package com.example.yakualerta
+package pe.unh.yakuni
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -65,7 +65,7 @@ def pagina_publica(comunidad_id: int, db: Session = Depends(get_db)):
 </head>
 <body>
   <div class="caja">
-    <div class="marca">💧 YakuAlerta</div>
+    <div class="marca">💧 Yakuni</div>
     <div class="tarjeta">
       <div class="banda">
         <div class="punto">💧</div>

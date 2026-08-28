@@ -20,7 +20,7 @@ class YakuApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'YakuAlerta',
+      title: 'Yakuni',
       debugShowCheckedModeBanner: false,
       theme: yakuTheme(),
       home: const _Arranque(),

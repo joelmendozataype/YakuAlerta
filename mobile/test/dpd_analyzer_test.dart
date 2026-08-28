@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:yakualerta/core/rules/motor_riesgo.dart';
-import 'package:yakualerta/core/vision/dpd_analyzer.dart';
+import 'package:yakuni/core/rules/motor_riesgo.dart';
+import 'package:yakuni/core/vision/dpd_analyzer.dart';
 
 // Pruebas del análisis de color DPD (HU-05).
 // Semántica del dominio: incoloro = SIN cloro = ROJO; magenta intenso = cloro

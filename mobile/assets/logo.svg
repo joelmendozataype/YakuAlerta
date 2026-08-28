@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Yakuni">
+  <defs>
+    <!-- Agua: del celeste de superficie al azul profundo del reservorio -->
+    <linearGradient id="agua" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#3AA0F0"/>
+      <stop offset="0.55" stop-color="#1E7FDC"/>
+      <stop offset="1" stop-color="#1657B8"/>
+    </linearGradient>
+    <!-- Recorte de la gota: todo lo interior queda contenido en ella -->
+    <clipPath id="gota">
+      <path d="M256 28C256 28 96 210 96 316a160 160 0 1 0 320 0C416 210 256 28 256 28Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- Gota -->
+  <path d="M256 28C256 28 96 210 96 316a160 160 0 1 0 320 0C416 210 256 28 256 28Z" fill="url(#agua)"/>
+
+  <g clip-path="url(#gota)">
+    <!-- Cordillera: la fuente del agua está en la altura -->
+    <path d="M96 330 L168 232 L214 292 L262 214 L318 292 L366 246 L416 316 L416 400 L96 400 Z"
+          fill="#14346E"/>
+    <!-- Nieve de las cumbres -->
+    <path d="M262 214 L292 256 L276 250 L262 262 L246 250 L232 258 Z" fill="#FFFFFF"/>
+    <path d="M168 232 L192 264 L180 260 L168 270 L156 260 L146 266 Z" fill="#FFFFFF"/>
+    <!-- Río al pie de la cordillera -->
+    <path d="M96 356 C 160 330, 208 384, 272 358 C 336 332, 372 372, 416 352 L416 386
+             C 372 406, 336 366, 272 392 C 208 418, 160 364, 96 390 Z" fill="#FFFFFF"/>
+    <!-- Brillo de la gota -->
+    <path d="M150 250 C 168 190, 200 138, 232 104 C 208 158, 182 206, 172 260 Z"
+          fill="#FFFFFF" opacity="0.85"/>
+  </g>
+
+  <!-- Señal: el dato viaja aunque la red sea mínima -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M338 122 A 92 92 0 0 1 430 214" stroke="#2E9BF0" stroke-width="26"/>
+    <path d="M356 168 A 46 46 0 0 1 402 214" stroke="#37B34A" stroke-width="26"/>
+  </g>
+
+  <!-- Escudo: el agua verificada como segura -->
+  <path d="M368 268 L452 296 V356 C452 404 414 436 368 452 C322 436 284 404 284 356 V296 Z"
+        fill="#FFFFFF"/>
+  <path d="M368 284 L438 307 V356 C438 395 406 423 368 437 C330 423 298 395 298 356 V307 Z"
+        fill="#37B34A"/>
+  <path d="M334 358 L358 382 L404 330" fill="none" stroke="#FFFFFF" stroke-width="24"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

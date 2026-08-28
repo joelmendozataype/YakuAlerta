@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # Base de datos
-    database_url: str = "postgresql+psycopg://yaku:yaku_dev_2026@localhost:5432/yakualerta"
+    database_url: str = "postgresql+psycopg://yaku:yaku_dev_2026@localhost:5432/yakuni"
     redis_url: str = "redis://localhost:6379/0"
 
     # Seguridad / JWT (RNF-05)

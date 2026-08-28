@@ -18,7 +18,7 @@ from ..enums import RolUsuario
 from ..timeutils import aware_utc
 from . import notificaciones as notif
 
-log = logging.getLogger("yakualerta.silencio")
+log = logging.getLogger("yakuni.silencio")
 
 
 def reservorios_en_silencio(db: Session, ahora: datetime | None = None) -> list[tuple[Reservorio, int]]:
@@ -44,7 +44,7 @@ def verificar_silencio(db: Session) -> int:
     atms = db.query(Usuario).filter(Usuario.rol == RolUsuario.ATM, Usuario.activo.is_(True)).all()
 
     for reservorio, dias in fuera:
-        txt = (f"⏰ YakuAlerta — SILENCIO DE DATOS\nReservorio {reservorio.codigo}: "
+        txt = (f"⏰ Yakuni — SILENCIO DE DATOS\nReservorio {reservorio.codigo}: "
                f"{dias} días sin medición (umbral {reservorio.umbral_silencio_dias}). "
                f"Programar supervisión.")
         # Aviso al operador asignado

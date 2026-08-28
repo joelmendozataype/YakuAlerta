@@ -61,7 +61,7 @@ class _ResultadoScreenState extends State<ResultadoScreen> {
       showDialog(context: context, builder: (_) => AlertDialog(
         title: const Text('SMS de respaldo'),
         content: SelectableText(
-          'Sin conexión de datos. Envía este SMS a la pasarela YakuAlerta:\n\n$texto'),
+          'Sin conexión de datos. Envía este SMS a la pasarela Yakuni:\n\n$texto'),
         actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Entendido'))],
       ));
     }

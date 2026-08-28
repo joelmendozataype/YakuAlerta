@@ -1,5 +1,5 @@
-name: yakualerta
-description: App móvil offline-first del operador JASS — YakuAlerta (Hackathon UNH 2026).
+name: yakuni
+description: App móvil offline-first del operador JASS — Yakuni (Hackathon UNH 2026).
 publish_to: "none"
 version: 1.0.0+1
 
@@ -40,3 +40,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/logo.png

@@ -1,4 +1,4 @@
-# 🏗️ Arquitectura de YakuAlerta
+# 🏗️ Arquitectura de Yakuni
 
 ## Visión general (offline-first, tres capas)
 

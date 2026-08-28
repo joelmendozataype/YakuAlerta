@@ -16,7 +16,7 @@ class LocalDb {
   Future<Database> get db async => _db ??= await _abrir();
 
   Future<Database> _abrir() async {
-    final ruta = p.join(await getDatabasesPath(), 'yakualerta.db');
+    final ruta = p.join(await getDatabasesPath(), 'yakuni.db');
     return openDatabase(ruta, version: 2, onCreate: _crear, onUpgrade: _actualizar);
   }
 

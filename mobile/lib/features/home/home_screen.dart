@@ -103,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('YakuAlerta', style: TextStyle(fontSize: 18)),
+            const Text('Yakuni', style: TextStyle(fontSize: 18)),
             Text(_usuario?['nombres'] ?? 'Operador',
                 style: const TextStyle(fontSize: 12, color: Colors.white70)),
           ],

@@ -56,7 +56,7 @@ def generar_excel(db: Session, ubigeo_id: int, periodo: str) -> bytes:
     wb = Workbook()
     ws = wb.active
     ws.title = "Vigilancia"
-    ws["A1"] = f"YakuAlerta — Reporte de vigilancia de la calidad del agua"
+    ws["A1"] = f"Yakuni — Reporte de vigilancia de la calidad del agua"
     ws["A1"].font = Font(bold=True, size=14)
     ws["A2"] = f"Distrito: {ubigeo.distrito} · Provincia: {ubigeo.provincia} · Periodo: {periodo}"
     ws["A3"] = f"Generado: {datetime.now():%Y-%m-%d %H:%M}"
@@ -90,10 +90,10 @@ def generar_pdf(db: Session, ubigeo_id: int, periodo: str) -> bytes:
     filas = _consolidado(db, ubigeo_id, periodo)
 
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4, title="Reporte de vigilancia YakuAlerta")
+    doc = SimpleDocTemplate(buf, pagesize=A4, title="Reporte de vigilancia Yakuni")
     styles = getSampleStyleSheet()
     elems = [
-        Paragraph("YakuAlerta — Reporte de vigilancia de la calidad del agua", styles["Title"]),
+        Paragraph("Yakuni — Reporte de vigilancia de la calidad del agua", styles["Title"]),
         Paragraph(f"Distrito: {ubigeo.distrito} · Provincia: {ubigeo.provincia}", styles["Normal"]),
         Paragraph(f"Periodo: {periodo} · Generado: {datetime.now():%Y-%m-%d %H:%M}", styles["Normal"]),
         Spacer(1, 16),

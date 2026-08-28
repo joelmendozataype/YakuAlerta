@@ -104,9 +104,9 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             children: [
               const SizedBox(height: 40),
-              const Icon(Icons.location_on, size: 96, color: Color(0xFF7FA9F5)),
+              Image.asset('assets/logo.png', height: 104, width: 104),
               const Text(
-                'YakuAlerta',
+                'Yakuni',
                 style: TextStyle(
                   fontSize: 34,
                   fontWeight: FontWeight.bold,

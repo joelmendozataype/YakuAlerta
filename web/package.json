@@ -1,9 +1,9 @@
 {
-  "name": "yakualerta-tablero",
+  "name": "yakuni-tablero",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Tablero institucional de YakuAlerta (ATM / DIRESA / salud)",
+  "description": "Tablero institucional de Yakuni (ATM / DIRESA / salud)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

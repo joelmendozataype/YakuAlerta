@@ -127,7 +127,7 @@ export default function LoginQR({ onSesion }) {
         Inicia sesión con el código QR
       </h3>
       <p className="mt-1 text-sm text-slate-500 max-w-[15rem]">
-        Escanea el código con la <span className="font-semibold">app de YakuAlerta</span> para
+        Escanea el código con la <span className="font-semibold">app de Yakuni</span> para
         entrar sin escribir tu clave.
       </p>
 
@@ -141,7 +141,7 @@ export default function LoginQR({ onSesion }) {
       {error && <p className="mt-3 text-xs text-rojo">{error}</p>}
 
       <p className="mt-4 text-[11px] text-slate-400 max-w-[15rem]">
-        Nunca escanees un código de YakuAlerta que te comparta otra persona.
+        Nunca escanees un código de Yakuni que te comparta otra persona.
       </p>
     </div>
   )

@@ -3,7 +3,7 @@
 Soporta PostgreSQL (producción / entrega) y SQLite (desarrollo sin instalar
 nada). El motor se elige según ``DATABASE_URL``:
     postgresql+psycopg://...   → PostgreSQL
-    sqlite:///./yakualerta.db  → SQLite (archivo local)
+    sqlite:///./yakuni.db  → SQLite (archivo local)
 """
 from collections.abc import Generator
 

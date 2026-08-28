@@ -2,7 +2,7 @@
 
 > Documento de diseño técnico. Fase posterior al piloto (el MVP usa la
 > heurística HSV de `mobile/lib/core/vision/dpd_analyzer.dart`).
-> Proyecto **YakuAlerta** — Hackathon Kuska Wiñasun UNH 2026.
+> Proyecto **Yakuni** — Hackathon Kuska Wiñasun UNH 2026.
 
 ## 1. Objetivo
 
@@ -239,5 +239,5 @@ class DpdModeloTflite {
   of free chlorine in drinking water.* Sensors, 25(11), 3251.
 - MINSA (2011). *Reglamento de la calidad del agua para consumo humano
   (D.S. N.° 031-2010-SA).*
-- Documentos del proyecto: `YakuAlerta_Analisis.docx`, `YakuAlerta_Diseno_Proyecto.docx`,
-  `YakuAlerta_Herramientas_Tecnologicas.docx`.
+- Documentos del proyecto: `Yakuni_Analisis.docx`, `Yakuni_Diseno_Proyecto.docx`,
+  `Yakuni_Herramientas_Tecnologicas.docx`.

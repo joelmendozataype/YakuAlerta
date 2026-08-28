@@ -41,7 +41,7 @@ export default function MiAgua() {
   return (
     <div className="max-w-xl mx-auto">
       <div className={`rounded-2xl text-white text-center p-8 ${COLOR[estado.nivel] || 'bg-slate-400'}`}>
-        <div className="text-5xl">💧</div>
+        <img src="/logo.svg" alt="" className="h-16 w-16 mx-auto drop-shadow" />
         <h1 className="mt-3 text-3xl font-bold">{estado.etiqueta}</h1>
         <p className="mt-1 text-white/90">
           {estado.comunidad} · {estado.distrito}

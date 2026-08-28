@@ -1,4 +1,4 @@
-// Cliente REST mínimo para la API de YakuAlerta.
+// Cliente REST mínimo para la API de Yakuni.
 const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 function getToken() {
@@ -34,7 +34,8 @@ async function request(path, { method = 'GET', body, blob = false } = {}) {
 
 export const api = {
   base: BASE,
-  login: (telefono, clave) => request('/auth/login', { method: 'POST', body: { telefono, clave } }),
+  login: (dni, clave, grupoRol) =>
+    request('/auth/login', { method: 'POST', body: { dni, clave, grupo_rol: grupoRol } }),
   // ─── Inicio de sesión por QR (vinculación con la app) ───────
   qrNueva: (clientHash) => request('/auth/qr/nueva', { method: 'POST', body: { client_hash: clientHash } }),
   qrEstado: (token) => request(`/auth/qr/${token}`),

@@ -51,7 +51,7 @@ def generar_aviso(estado: EstadoPublico, url_publica: str) -> bytes:
     # ── Encabezado ───────────────────────────────────────────────
     c.setFont("Helvetica-Bold", 13)
     c.setFillColorRGB(*_rgb("0E4A5A"))
-    c.drawString(MARGEN, ALTO - MARGEN - 4 * mm, "YakuAlerta")
+    c.drawString(MARGEN, ALTO - MARGEN - 4 * mm, "Yakuni")
     c.setFont("Helvetica", 9.5)
     c.setFillColorRGB(*_rgb("64748B"))
     c.drawRightString(ANCHO - MARGEN, ALTO - MARGEN - 4 * mm,

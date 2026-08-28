@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../db/local_db.dart';
 import '../models/reservorio.dart';
 
-/// Cliente REST del backend YakuAlerta.
+/// Cliente REST del backend Yakuni.
 ///
 /// La URL base apunta por defecto al emulador Android (10.0.2.2 = localhost
 /// del host). Cámbiala con --dart-define=API_URL=... para dispositivo físico.

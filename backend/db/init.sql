@@ -1,5 +1,5 @@
 -- =============================================================================
---  YakuAlerta — inicialización de la base de datos (PostgreSQL 16 + PostGIS)
+--  Yakuni — inicialización de la base de datos (PostgreSQL 16 + PostGIS)
 --  Ejecutado automáticamente por el contenedor de Postgres en el primer arranque.
 --  Modelo físico 3NF (14 tablas) del documento de modelamiento de BD.
 -- =============================================================================

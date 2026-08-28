@@ -48,7 +48,7 @@ class _EscanerQrScreenState extends State<EscanerQrScreen> {
     if (!valor.startsWith(_prefijo)) {
       setState(() {
         _fase = _Fase.error;
-        _mensaje = 'Ese código no pertenece a YakuAlerta.';
+        _mensaje = 'Ese código no pertenece a Yakuni.';
       });
       return;
     }
@@ -144,7 +144,7 @@ class _EscanerQrScreenState extends State<EscanerQrScreen> {
           left: 24,
           right: 24,
           child: Text(
-            'Apunta al código QR que aparece\nen el tablero web de YakuAlerta',
+            'Apunta al código QR que aparece\nen el tablero web de Yakuni',
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 15),
           ),

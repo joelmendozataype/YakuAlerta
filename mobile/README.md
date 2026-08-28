@@ -1,4 +1,4 @@
-# 📱 YakuAlerta — App móvil del operador JASS
+# 📱 Yakuni — App móvil del operador JASS
 
 App **offline-first** en Flutter para el registro de mediciones de calidad del
 agua en campo, con clasificación de riesgo local, recomendación de dosis y

@@ -1,4 +1,4 @@
-"""YakuAlerta — API REST (FastAPI).
+"""Yakuni — API REST (FastAPI).
 
 Punto de entrada: CORS, routers, healthcheck y verificación diaria de silencio.
 """
@@ -19,7 +19,7 @@ from .routers import (
 from .services.silencio import verificar_silencio
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s | %(message)s")
-log = logging.getLogger("yakualerta")
+log = logging.getLogger("yakuni")
 
 scheduler = BackgroundScheduler(timezone="America/Lima")
 
@@ -46,13 +46,13 @@ async def lifespan(app: FastAPI):
     scheduler.add_job(_job_silencio, "cron", hour=6, minute=0, id="silencio_diario",
                       replace_existing=True)
     scheduler.start()
-    log.info("YakuAlerta API v%s lista. Modo SMS: %s", __version__, settings.sms_modo)
+    log.info("Yakuni API v%s lista. Modo SMS: %s", __version__, settings.sms_modo)
     yield
     scheduler.shutdown(wait=False)
 
 
 app = FastAPI(
-    title="YakuAlerta API",
+    title="Yakuni API",
     description="Sistema de alerta temprana para agua no segura — Hackathon UNH 2026.",
     version=__version__,
     lifespan=lifespan,
@@ -73,7 +73,7 @@ for r in (auth, auth_qr, admin, mediciones, sync, alertas, tablero, laboratorio,
 
 @app.get("/", tags=["health"])
 def raiz():
-    return {"servicio": "YakuAlerta API", "version": __version__, "docs": "/docs"}
+    return {"servicio": "Yakuni API", "version": __version__, "docs": "/docs"}
 
 
 @app.get("/health", tags=["health"])

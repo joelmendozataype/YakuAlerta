@@ -1,4 +1,4 @@
-# 🚀 Puesta en marcha — YakuAlerta
+# 🚀 Puesta en marcha — Yakuni
 
 ## Requisitos
 
@@ -36,7 +36,7 @@ Esto levanta cuatro contenedores:
 ## Opción B — Backend sin Docker, con SQLite (sin instalar base de datos)
 
 La vía más rápida: no instalas ningún servidor de BD, se usa un archivo SQLite.
-El `backend/.env` ya viene configurado con `DATABASE_URL=sqlite:///./yakualerta.db`.
+El `backend/.env` ya viene configurado con `DATABASE_URL=sqlite:///./yakuni.db`.
 
 ```powershell
 cd backend
@@ -44,12 +44,12 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 
-python -m app.seed            # crea el esquema + datos demo en yakualerta.db
+python -m app.seed            # crea el esquema + datos demo en yakuni.db
 uvicorn app.main:app --reload
 ```
 
-→ http://localhost:8000/docs · el archivo `yakualerta.db` aparece en `backend/`.
-Para reiniciar los datos, borra `yakualerta.db` y vuelve a correr `app.seed`.
+→ http://localhost:8000/docs · el archivo `yakuni.db` aparece en `backend/`.
+Para reiniciar los datos, borra `yakuni.db` y vuelve a correr `app.seed`.
 
 ## Opción C — Backend sin Docker, con PostgreSQL
 
@@ -60,7 +60,7 @@ pip install -r requirements.txt
 
 # Instala PostgreSQL, crea la BD y carga backend/db/init.sql.
 # Cambia DATABASE_URL en backend/.env a:
-#   postgresql+psycopg://postgres:TU_PASSWORD@localhost:5432/yakualerta
+#   postgresql+psycopg://postgres:TU_PASSWORD@localhost:5432/yakuni
 python -m app.seed
 uvicorn app.main:app --reload
 ```

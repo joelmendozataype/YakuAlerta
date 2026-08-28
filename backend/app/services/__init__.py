@@ -1,1 +1,1 @@
-"""Servicios de dominio de YakuAlerta."""
+"""Servicios de dominio de Yakuni."""

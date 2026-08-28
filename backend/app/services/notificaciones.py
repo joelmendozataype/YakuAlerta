@@ -11,7 +11,7 @@ import logging
 from ..config import settings
 from ..enums import CanalNotif, EstadoNotif
 
-log = logging.getLogger("yakualerta.notif")
+log = logging.getLogger("yakuni.notif")
 
 
 def _modo_real() -> bool:
@@ -53,14 +53,14 @@ def componer_mensaje_poblacion(nivel: str, comunidad: str) -> str:
     """
     if nivel == "ROJO":
         return (
-            f"AVISO YakuAlerta — {comunidad}\n"
+            f"AVISO Yakuni — {comunidad}\n"
             "El agua NO ES SEGURA para beber en este momento.\n"
             "HIERVA el agua 1 minuto antes de consumirla o de usarla para cocinar.\n"
             "La JASS ya está atendiendo el problema. Le avisaremos cuando el agua "
             "vuelva a ser segura."
         )
     return (
-        f"AVISO YakuAlerta — {comunidad}\n"
+        f"AVISO Yakuni — {comunidad}\n"
         "El agua está en observación. Por precaución, hierva el agua antes de beberla."
     )
 
@@ -75,7 +75,7 @@ def componer_mensaje_alerta(
     cl = f"{cloro:.2f} mg/L" if cloro is not None else "s/d"
     tb = f"{turbidez:.1f} UNT" if turbidez is not None else "s/d"
     partes = [
-        f"{emoji} YakuAlerta — AGUA {'NO SEGURA' if nivel == 'ROJO' else 'EN RIESGO'}",
+        f"{emoji} Yakuni — AGUA {'NO SEGURA' if nivel == 'ROJO' else 'EN RIESGO'}",
         f"Comunidad: {comunidad} · Reservorio: {reservorio}",
         f"Cloro: {cl} · Turbidez: {tb}",
     ]

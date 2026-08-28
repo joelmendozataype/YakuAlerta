@@ -1,9 +1,9 @@
-# 💧 YakuAlerta
+# 💧 Yakuni
 
 **Sistema de alerta temprana para agua no segura en reservorios comunales de Huancavelica.**
 Hackathon *Kuska Wiñasun: Agua Segura para Huancavelica* — UNH 2026.
 
-YakuAlerta digitaliza el primer eslabón de la vigilancia sanitaria del agua rural: el
+Yakuni digitaliza el primer eslabón de la vigilancia sanitaria del agua rural: el
 operador de la JASS registra la medición de cloro residual y turbidez **sin internet**, el
 sistema clasifica automáticamente el riesgo (semáforo 🟢🟡🔴) conforme al **D.S. N.° 031-2010-SA**,
 emite **alertas accionables por SMS/WhatsApp** y consolida todo en un **tablero institucional**

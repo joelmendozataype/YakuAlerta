@@ -4,14 +4,14 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-yaku}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-yaku_dev_2026}
-      POSTGRES_DB: ${POSTGRES_DB:-yakualerta}
+      POSTGRES_DB: ${POSTGRES_DB:-yakuni}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/db/init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-yaku} -d ${POSTGRES_DB:-yakualerta}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-yaku} -d ${POSTGRES_DB:-yakuni}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -25,7 +25,7 @@ services:
     build: ./backend
     env_file: .env
     environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-yaku}:${POSTGRES_PASSWORD:-yaku_dev_2026}@db:5432/${POSTGRES_DB:-yakualerta}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-yaku}:${POSTGRES_PASSWORD:-yaku_dev_2026}@db:5432/${POSTGRES_DB:-yakuni}
       REDIS_URL: redis://redis:6379/0
     ports:
       - "8000:8000"
