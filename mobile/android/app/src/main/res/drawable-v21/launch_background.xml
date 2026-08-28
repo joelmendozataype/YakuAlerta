@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
+<!-- Lo que se ve mientras Flutter arranca: la marca sobre fondo claro, para
+     que la app no abra en blanco antes de mostrar su pantalla de ingreso. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="?android:colorBackground" />
-
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
+    <item android:drawable="@color/fondo_arranque" />
+    <item>
         <bitmap
             android:gravity="center"
             android:src="@mipmap/launch_image" />
-    </item> -->
+    </item>
 </layer-list>

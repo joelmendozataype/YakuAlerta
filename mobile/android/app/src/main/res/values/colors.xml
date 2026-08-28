@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Blanco roto: el mismo fondo de la pantalla de ingreso, para que el
+         paso del arranque a la app no dé un salto de color. -->
+    <color name="fondo_arranque">#F1F5F9</color>
+</resources>
