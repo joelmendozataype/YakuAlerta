@@ -15,6 +15,8 @@ import { Spinner } from '../components/ui'
 
 // Cómo se lee cada parámetro, para que nadie invierta los umbrales sin darse
 // cuenta de lo que significan.
+// El verde no tiene campo propio: es la banda que queda cuando el valor no
+// cruza el amarillo. La pantalla lo dejaba implícito y había que deducirlo.
 const SENTIDO = {
   cloro_residual: {
     titulo: 'Cloro residual libre',
@@ -22,6 +24,11 @@ const SENTIDO = {
       + 'así que el umbral rojo va por debajo del amarillo.',
     amarillo: 'Por debajo de este valor, el agua entra en riesgo',
     rojo: 'Por debajo de este valor, el agua no es segura',
+    bandas: (a, r) => [
+      ['VERDE', `≥ ${a}`],
+      ['AMARILLO', `${r} – ${a}`],
+      ['ROJO', `< ${r}`],
+    ],
   },
   turbidez: {
     titulo: 'Turbidez',
@@ -29,7 +36,37 @@ const SENTIDO = {
       + 'más riesgo, así que el umbral rojo va por encima del amarillo.',
     amarillo: 'Por encima de este valor, el agua entra en riesgo',
     rojo: 'Por encima de este valor, el agua no es segura',
+    bandas: (a, r) => [
+      ['VERDE', `≤ ${a}`],
+      ['AMARILLO', `${a} – ${r}`],
+      ['ROJO', `> ${r}`],
+    ],
   },
+}
+
+const COLOR_BANDA = {
+  VERDE: { punto: 'bg-verde', texto: 'text-verde', rotulo: 'Segura' },
+  AMARILLO: { punto: 'bg-amarillo', texto: 'text-amarillo', rotulo: 'En riesgo' },
+  ROJO: { punto: 'bg-rojo', texto: 'text-rojo', rotulo: 'No segura' },
+}
+
+/** Las tres bandas resultantes, para ver el efecto antes de guardar. */
+function Bandas({ info, amarillo, rojo }) {
+  if (!info.bandas || amarillo === '' || rojo === '') return null
+  return (
+    <div className="mt-5 grid grid-cols-3 gap-2 rounded-lg bg-slate-50 p-3">
+      {info.bandas(amarillo, rojo).map(([nivel, rango]) => {
+        const c = COLOR_BANDA[nivel]
+        return (
+          <div key={nivel} className="text-center">
+            <span className={`mx-auto block h-2.5 w-2.5 rounded-full ${c.punto}`} />
+            <p className={`mt-1.5 text-sm font-semibold ${c.texto}`}>{rango}</p>
+            <p className="text-[11px] text-slate-400">{c.rotulo}</p>
+          </div>
+        )
+      })}
+    </div>
+  )
 }
 
 function Tarjeta({ p, editable, onGuardado, onError }) {
@@ -100,6 +137,8 @@ function Tarjeta({ p, editable, onGuardado, onError }) {
           <span className="mt-1 block text-xs text-slate-400">{info.rojo}</span>
         </label>
       </div>
+
+      <Bandas info={info} amarillo={amarillo} rojo={rojo} />
 
       <p className="mt-4 text-xs text-slate-400">Norma: {p.norma_referencia}</p>
 
