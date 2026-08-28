@@ -60,6 +60,21 @@ export const api = {
   restablecerClave: (id) =>
     request(`/admin/usuarios/${id}/clave`, { method: 'POST' }),
   comunidades: () => request('/admin/comunidades'),
+  ubigeos: () => request('/admin/ubigeos'),
+  // Territorio: cada distrito suma comunidades, y cada comunidad su JASS.
+  crearComunidad: (payload) => request('/admin/comunidades', { method: 'POST', body: payload }),
+  crearReservorio: (payload) => request('/admin/reservorios', { method: 'POST', body: payload }),
+  asignarOperador: (usuarioId, reservorioId) =>
+    request(`/admin/asignaciones?usuario_id=${usuarioId}&reservorio_id=${reservorioId}`,
+      { method: 'POST' }),
+  // Rastro de auditoría: quién hizo qué y sobre qué.
+  auditoria: (filtros = {}) => {
+    const q = new URLSearchParams(
+      Object.entries(filtros).filter(([, v]) => v !== '' && v != null),
+    )
+    return request(`/auditoria?${q}`)
+  },
+  accionesAuditables: () => request('/auditoria/acciones'),
   // Umbrales normativos (RNF-07): los mueve solo el ADMIN.
   parametros: () => request('/parametros'),
   corregirParametro: (id, payload) =>

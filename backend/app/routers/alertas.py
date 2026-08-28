@@ -11,11 +11,13 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..deps import requiere_roles, usuario_actual
-from ..enums import EstadoAlerta, NivelRiesgo, RolUsuario
+from ..enums import DictamenLab, EstadoAlerta, NivelRiesgo, RolUsuario
 from ..models import (
-    Alerta, Comunidad, EvidenciaFoto, Medicion, RecomendacionDosis, Reservorio, Usuario,
+    Alerta, Auditoria, Comunidad, EvidenciaFoto, Medicion, RecomendacionDosis,
+    Reservorio, ResultadoLaboratorio, Usuario,
 )
-from ..schemas import AlertaOut, CierreAlertaIn, NotificacionOut
+from ..schemas import AlertaOut, CierreAlertaIn, NotificacionOut, SustentoCierre
+from ..timeutils import aware_utc
 
 router = APIRouter(prefix="/alertas", tags=["alertas"])
 
@@ -88,27 +90,94 @@ def cerrar_alerta(
         raise HTTPException(status.HTTP_409_CONFLICT, "La alerta ya está cerrada")
 
     # ── Regla de trazabilidad (CA-HU16-02) ──────────────────────
-    if a.nivel == NivelRiesgo.ROJO and not datos.dictamen_desa:
-        if datos.medicion_cierre_id is None:
-            raise HTTPException(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
-                "No se puede cerrar una alerta ROJA sin una remedición en VERDE "
-                "o un dictamen sanitario de la DESA (CA-HU16-02).",
-            )
-        remedicion = db.get(Medicion, datos.medicion_cierre_id)
-        if not remedicion:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "Remedición no encontrada")
-        if remedicion.nivel_riesgo != NivelRiesgo.VERDE:
-            raise HTTPException(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
-                f"La remedición está en {remedicion.nivel_riesgo.value}; se requiere VERDE para cerrar.",
-            )
+    # Una alerta roja se cierra con un hecho, no con una declaración: o una
+    # remedición en verde del mismo reservorio, o un dictamen CONFORME de
+    # laboratorio posterior a la alerta. El servidor los busca; quien cierra
+    # no puede afirmar que existen.
+    sustento = _sustento_del_cierre(db, a, datos)
 
     a.estado = EstadoAlerta.CERRADA
     a.fecha_cierre = datetime.now(timezone.utc)
     a.medicion_cierre_id = datos.medicion_cierre_id
     a.resultado_cierre = datos.resultado_cierre
     a.usuario_cierre_id = usuario.usuario_id
+    db.add(Auditoria(
+        usuario_id=usuario.usuario_id, accion="CIERRE_ALERTA",
+        entidad_afectada="alerta", registro_id=str(a.alerta_id),
+        detalle=f"{sustento.tipo}: {sustento.detalle}",
+    ))
     db.commit()
     db.refresh(a)
     return _to_out(db, a)
+
+
+def _sustento_del_cierre(db: Session, a: Alerta, datos: CierreAlertaIn) -> SustentoCierre:
+    """Verifica que exista un hecho que justifique cerrar, y devuelve cuál.
+
+    Una alerta amarilla se cierra con la gestión de quien la atiende. Una roja
+    exige evidencia registrada (CA-HU16-02), porque cerrarla significa decirle
+    a la comunidad que puede volver a beber el agua.
+    """
+    if a.nivel != NivelRiesgo.ROJO:
+        return SustentoCierre(tipo="DIRECTO", detalle="Alerta no roja: basta la gestión registrada.")
+
+    abierta = aware_utc(a.fecha_generacion)
+    reservorio_id = a.medicion.reservorio_id
+
+    # ── Camino 1: remedición en verde ───────────────────────────
+    if datos.medicion_cierre_id is not None:
+        rem = db.get(Medicion, datos.medicion_cierre_id)
+        if not rem:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Remedición no encontrada")
+        # Debe ser del mismo reservorio: una medición verde de otra comunidad
+        # no dice nada sobre esta agua.
+        if rem.reservorio_id != reservorio_id:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                "La remedición pertenece a otro reservorio; debe ser del mismo que originó la alerta.",
+            )
+        if rem.nivel_riesgo != NivelRiesgo.VERDE:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                f"La remedición está en {rem.nivel_riesgo.value}; se requiere VERDE para cerrar.",
+            )
+        # Y posterior a la alerta: una medición vieja no prueba que se resolvió.
+        if aware_utc(rem.fecha_hora) < abierta:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                "La remedición es anterior a la alerta; no acredita que el problema se haya resuelto.",
+            )
+        return SustentoCierre(
+            tipo="REMEDICION",
+            detalle=f"Medición #{rem.medicion_id} en VERDE del {aware_utc(rem.fecha_hora):%d/%m/%Y}.",
+        )
+
+    # ── Camino 2: dictamen de laboratorio CONFORME ──────────────
+    # La comparación de fechas se hace en Python, no en SQL. SQLite guarda
+    # CURRENT_TIMESTAMP sin microsegundos pero enlaza el parámetro con ellos, y
+    # al compararse como texto «…58» queda por debajo de «…58.000000»: un
+    # dictamen emitido en el mismo segundo que la alerta se volvía invisible y
+    # el caso no se podía cerrar.
+    candidatos = (
+        db.query(ResultadoLaboratorio)
+        .filter(ResultadoLaboratorio.reservorio_id == reservorio_id,
+                ResultadoLaboratorio.dictamen == DictamenLab.CONFORME)
+        .order_by(ResultadoLaboratorio.resultado_id.desc()).all()
+    )
+    dictamen = next(
+        (d for d in candidatos if aware_utc(d.created_at) >= abierta), None
+    )
+    if dictamen:
+        return SustentoCierre(
+            tipo="DICTAMEN_LAB",
+            detalle=(f"Resultado #{dictamen.resultado_id} CONFORME de "
+                     f"{dictamen.laboratorio or 'laboratorio'}, muestreo del "
+                     f"{dictamen.fecha_muestreo:%d/%m/%Y}."),
+        )
+
+    raise HTTPException(
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        "No se puede cerrar una alerta ROJA sin evidencia: registre una remedición "
+        "en VERDE del mismo reservorio, o un resultado de laboratorio CONFORME "
+        "posterior a la alerta (CA-HU16-02).",
+    )

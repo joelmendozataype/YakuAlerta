@@ -96,7 +96,6 @@ function DetalleAlerta({ alerta, onClose, onCerrada }) {
   const [remediciones, setRemediciones] = useState([])
   const [medicionCierre, setMedicionCierre] = useState('')
   const [resultado, setResultado] = useState('')
-  const [dictamen, setDictamen] = useState(false)
   const [error, setError] = useState('')
   const [enviando, setEnviando] = useState(false)
 
@@ -110,13 +109,15 @@ function DetalleAlerta({ alerta, onClose, onCerrada }) {
 
   async function cerrar() {
     setError('')
-    if (!resultado.trim()) { setError('Describe la acción ejecutada.'); return }
+    if (resultado.trim().length < 10) {
+      setError('Describa la acción ejecutada: al menos 10 caracteres.')
+      return
+    }
     setEnviando(true)
     try {
       await api.cerrarAlerta(alerta.alerta_id, {
         medicion_cierre_id: medicionCierre ? Number(medicionCierre) : null,
         resultado_cierre: resultado,
-        dictamen_desa: dictamen,
       })
       onCerrada()
     } catch (e) {
@@ -186,20 +187,28 @@ function DetalleAlerta({ alerta, onClose, onCerrada }) {
           <div className="border-t pt-4 space-y-3">
             <p className="font-semibold text-slate-700 text-sm">Registrar cierre con evidencia</p>
             {detalle.nivel === 'ROJO' && (
-              <p className="text-xs text-amber-700 bg-amber-50 rounded p-2">
-                ⚠️ Una alerta roja solo se cierra con una remedición en VERDE o con dictamen sanitario de la DESA (CA-HU16-02).
-              </p>
+              <div className="text-xs text-amber-700 bg-amber-50 rounded p-3 space-y-1">
+                <p className="font-semibold">
+                  Cerrar esta alerta le dice a la comunidad que puede volver a beber el agua.
+                </p>
+                <p>Por eso exige evidencia registrada (CA-HU16-02). Vale cualquiera de las dos:</p>
+                <ul className="list-disc pl-4">
+                  <li>Una <strong>remedición en VERDE</strong> del mismo reservorio, posterior a la alerta.</li>
+                  <li>
+                    Un <strong>resultado de laboratorio CONFORME</strong> posterior a la alerta.
+                    Si la DESA ya lo registró, deje vacío el campo de abajo: el sistema lo busca.
+                  </li>
+                </ul>
+              </div>
             )}
             <div>
-              <label className="text-sm text-slate-600">ID de remedición (verde)</label>
+              <label className="text-sm text-slate-600">
+                N.º de remedición en verde <span className="text-slate-400">(opcional)</span>
+              </label>
               <input className="input mt-1" value={medicionCierre}
-                onChange={(e) => setMedicionCierre(e.target.value)}
-                placeholder="Nº de medición de remediación" />
+                onChange={(e) => setMedicionCierre(e.target.value.replace(/\D/g, ''))}
+                placeholder="Déjelo vacío si el cierre se apoya en el laboratorio" />
             </div>
-            <label className="flex items-center gap-2 text-sm text-slate-600">
-              <input type="checkbox" checked={dictamen} onChange={(e) => setDictamen(e.target.checked)} />
-              Cierre por dictamen sanitario de la DESA
-            </label>
             <div>
               <label className="text-sm text-slate-600">Acción ejecutada</label>
               <textarea className="input mt-1" rows={2} value={resultado}

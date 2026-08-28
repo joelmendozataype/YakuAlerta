@@ -199,6 +199,22 @@ class ActorOut(BaseModel):
     activas: int
 
 
+# ─── Auditoría ───────────────────────────────────────────────────
+class AuditoriaOut(BaseModel):
+    """Un hecho del rastro, ya legible: quién, qué, sobre qué y cuándo."""
+    auditoria_id: int
+    fecha_hora: datetime
+    accion: str
+    titulo: str                      # la acción en palabras
+    usuario_id: int | None = None
+    usuario: str | None = None
+    rol: RolUsuario | None = None
+    entidad_afectada: str | None = None
+    registro_id: str | None = None
+    detalle: str | None = None
+    ip_origen: str | None = None
+
+
 class UsuarioPatch(BaseModel):
     """Lo que se puede corregir de una cuenta ya creada.
 
@@ -317,13 +333,26 @@ class AlertaOut(BaseModel):
 
 
 class CierreAlertaIn(BaseModel):
+    """Cierre de un caso.
+
+    No hay campo para declarar que existe un dictamen de la DESA: eso lo
+    verifica el servidor contra ``resultado_laboratorio``. Un cierre debe
+    apoyarse en un hecho registrado, no en la afirmación de quien cierra.
+    """
     medicion_cierre_id: int | None = Field(
-        default=None, description="Remedición en verde que cierra el caso (obligatoria en rojo salvo dictamen DESA)")
-    resultado_cierre: str
-    dictamen_desa: bool = False
+        default=None,
+        description="Remedición en VERDE del mismo reservorio, posterior a la alerta")
+    resultado_cierre: str = Field(min_length=10, max_length=120,
+                                  description="Qué se hizo para resolver el caso")
 
 
 # ─── Tablero ─────────────────────────────────────────────────────
+class SustentoCierre(BaseModel):
+    """En qué se apoyó el cierre de una alerta roja."""
+    tipo: str                      # REMEDICION | DICTAMEN_LAB | DIRECTO
+    detalle: str
+
+
 class SemaforoComunidad(BaseModel):
     comunidad_id: int
     comunidad: str

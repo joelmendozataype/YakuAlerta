@@ -15,6 +15,8 @@ const NAV = [
   { to: '/usuarios', label: 'Usuarios', icon: '👥', roles: ['ATM', 'ADMIN'] },
   // Los umbrales del D.S. los mueve solo el ADMIN; el resto los consulta.
   { to: '/parametros', label: 'Umbrales', icon: '⚖️', roles: ['ADMIN', 'ATM', 'DESA', 'DRVCS'] },
+  // El rastro de quién hizo qué: supervisión, la función propia del ADMIN.
+  { to: '/auditoria', label: 'Auditoría', icon: '🧾', roles: ['ADMIN', 'ATM'] },
 ]
 
 const puedeVer = (item, rol) => item.roles === null || item.roles.includes(rol)

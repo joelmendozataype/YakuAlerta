@@ -9,6 +9,7 @@ import Reportes from './pages/Reportes'
 import Jass from './pages/Jass'
 import Usuarios from './pages/Usuarios'
 import Parametros from './pages/Parametros'
+import Auditoria from './pages/Auditoria'
 import VigilanciaSalud from './pages/VigilanciaSalud'
 import Priorizacion from './pages/Priorizacion'
 import InicioDesa from './pages/InicioDesa'
@@ -46,6 +47,7 @@ export default function App() {
       <Route path="/jass" element={<Privada><Jass /></Privada>} />
       <Route path="/usuarios" element={<Privada><Usuarios /></Privada>} />
       <Route path="/parametros" element={<Privada><Parametros /></Privada>} />
+      <Route path="/auditoria" element={<Privada><Auditoria /></Privada>} />
       <Route path="/laboratorio" element={<Privada><Laboratorio /></Privada>} />
       <Route path="/reportes" element={<Privada><Reportes /></Privada>} />
       <Route path="*" element={<Navigate to="/" replace />} />
