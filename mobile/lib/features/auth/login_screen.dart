@@ -143,10 +143,10 @@ class _LoginScreenState extends State<LoginScreen> {
             initialValue: _grupo,
             isExpanded: true,
             decoration: const InputDecoration(
-              labelText: 'Tipo de Rol (Seleccione uno)',
+              labelText: 'Tipo de rol',
               border: OutlineInputBorder(),
             ),
-            hint: const Text('Tipo de Rol (Seleccione uno)'),
+            hint: const Text('Seleccione…'),
             items: [
               for (final g in GrupoRol.values)
                 DropdownMenuItem(

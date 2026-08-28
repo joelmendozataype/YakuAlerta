@@ -82,7 +82,7 @@ export default function Login() {
                   </label>
                   <select className="input mt-1" value={grupo}
                     onChange={(e) => elegirGrupo(e.target.value)} required>
-                    <option value="">Tipo de Rol (Seleccione uno)</option>
+                    <option value="">Seleccione…</option>
                     {GRUPOS.map((g) => (
                       <option key={g.valor} value={g.valor}>{g.etiqueta}</option>
                     ))}
