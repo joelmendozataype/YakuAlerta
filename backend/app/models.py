@@ -49,6 +49,10 @@ class Comunidad(Base):
     comunidad_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     ubigeo_id: Mapped[int] = mapped_column(ForeignKey("ubigeo.ubigeo_id"))
     nombre: Mapped[str] = mapped_column(String(120))
+    # La JASS es única por comunidad (1:1): administra el sistema de agua de
+    # esa comunidad y de ninguna otra. Por eso vive aquí como atributo y no
+    # como tabla aparte. La ATM agrupa todas las de su distrito.
+    jass_nombre: Mapped[str | None] = mapped_column(String(120))
     latitud: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
     longitud: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
     poblacion_servida: Mapped[int | None] = mapped_column(Integer)

@@ -7,6 +7,8 @@ const NAV = [
   // El inicio cambia de nombre según lo que el rol encuentra allí.
   { to: '/', label: 'Inicio', icon: '📊', end: true, roles: null },
   { to: '/alertas', label: 'Alertas', icon: '🔔', roles: ['ATM', 'DESA', 'ADMIN', 'SALUD', 'DRVCS', 'OPERADOR', 'DIRECTIVO_JASS'] },
+  // La ATM acompaña a las JASS de su distrito; el ADMIN, a las de toda la región.
+  { to: '/jass', label: 'JASS', icon: '🏘️', roles: ['ATM', 'ADMIN'] },
   { to: '/laboratorio', label: 'Laboratorio', icon: '🧪', roles: ['DESA', 'ATM', 'ADMIN'] },
   { to: '/reportes', label: 'Reportes', icon: '📄', roles: ['ATM', 'DESA', 'DRVCS', 'ADMIN'] },
 ]

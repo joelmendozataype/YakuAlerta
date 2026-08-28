@@ -75,14 +75,16 @@ def sembrar() -> None:
         db.flush()
 
         # ── Comunidades ─────────────────────────────────────────
+        # Cada comunidad tiene su propia JASS: una junta administra un solo
+        # sistema de agua. La ATM de Lircay las acompaña a las tres.
         comunidades_def = [
-            ("Comunidad 01", -12.9833, -74.7167, 420),
-            ("Comunidad 02", -12.9705, -74.7042, 610),
-            ("Comunidad 03", -13.0012, -74.7290, 260),
+            ("Comunidad 01", "JASS Comunidad 01", -12.9833, -74.7167, 420),
+            ("Comunidad 02", "JASS Comunidad 02", -12.9705, -74.7042, 610),
+            ("Comunidad 03", "JASS Comunidad 03", -13.0012, -74.7290, 260),
         ]
         comunidades = {}
-        for nombre, lat, lon, pob in comunidades_def:
-            c = Comunidad(ubigeo_id=ubigeo.ubigeo_id, nombre=nombre,
+        for nombre, jass, lat, lon, pob in comunidades_def:
+            c = Comunidad(ubigeo_id=ubigeo.ubigeo_id, nombre=nombre, jass_nombre=jass,
                           latitud=lat, longitud=lon, poblacion_servida=pob)
             db.add(c)
             db.flush()
@@ -108,7 +110,10 @@ def sembrar() -> None:
         usuarios_def = [
             ("Máximo Quispe (operador)", "70100001", "987000001", RolUsuario.OPERADOR, "JASS Comunidad 01", cid("Comunidad 01"), ub),
             ("Rosa Huamán (operador)", "70100002", "987000002", RolUsuario.OPERADOR, "JASS Comunidad 02", cid("Comunidad 02"), ub),
+            ("Julián Ccanto (operador)", "70100003", "987000003", RolUsuario.OPERADOR, "JASS Comunidad 03", cid("Comunidad 03"), ub),
             ("Directivo JASS Comunidad 01", "70100010", "987000010", RolUsuario.DIRECTIVO_JASS, "JASS Comunidad 01", cid("Comunidad 01"), ub),
+            ("Directivo JASS Comunidad 02", "70100011", "987000011", RolUsuario.DIRECTIVO_JASS, "JASS Comunidad 02", cid("Comunidad 02"), ub),
+            ("Directivo JASS Comunidad 03", "70100012", "987000012", RolUsuario.DIRECTIVO_JASS, "JASS Comunidad 03", cid("Comunidad 03"), ub),
             ("Ing. Pazos (ATM)", "70100020", "987000020", RolUsuario.ATM, "Municipalidad de Lircay", None, ub),
             ("Esp. Ccora (DESA)", "70100030", "987000030", RolUsuario.DESA, "DIRESA Huancavelica", None, None),
             ("Tec. Salud Pampas", "70100040", "987000040", RolUsuario.SALUD, "C.S. Lircay", None, ub),
@@ -127,16 +132,20 @@ def sembrar() -> None:
             usuarios[tel] = u
 
         # ── Asignaciones operador ↔ reservorio ──────────────────
-        db.add(AsignacionOperador(usuario_id=usuarios["987000001"].usuario_id,
-                                  reservorio_id=reservorios["Comunidad 01"].reservorio_id))
-        db.add(AsignacionOperador(usuario_id=usuarios["987000001"].usuario_id,
-                                  reservorio_id=reservorios["Comunidad 02"].reservorio_id))
-        db.add(AsignacionOperador(usuario_id=usuarios["987000002"].usuario_id,
-                                  reservorio_id=reservorios["Comunidad 03"].reservorio_id))
+        # Cada operador mide el reservorio de su propia comunidad: la JASS no
+        # opera fuera de su sistema.
+        for tel, com in (("987000001", "Comunidad 01"),
+                         ("987000002", "Comunidad 02"),
+                         ("987000003", "Comunidad 03")):
+            db.add(AsignacionOperador(usuario_id=usuarios[tel].usuario_id,
+                                      reservorio_id=reservorios[com].reservorio_id))
         db.flush()
 
         # ── Mediciones demo (verde/amarillo/rojo) ───────────────
-        op_id = usuarios["987000001"].usuario_id
+        # Cada medición la firma el operador de esa JASS, no uno prestado.
+        operador_de = {"Comunidad 01": "987000001",
+                       "Comunidad 02": "987000002",
+                       "Comunidad 03": "987000003"}
         ahora = datetime.now(timezone.utc)
         muestras = [
             ("Comunidad 01", 0.72, 2.0, None, 0),                        # verde
@@ -152,7 +161,7 @@ def sembrar() -> None:
                 cloro_mg_l=cl, turbidez_unt=tb,
                 metodo_cloro=MetodoLectura.MANUAL, observaciones=obs,
             )
-            registrar_medicion(db, datos, op_id)
+            registrar_medicion(db, datos, usuarios[operador_de[nombre]].usuario_id)
 
         # Nota: si se agrega una cuarta comunidad sin mediciones, aparecerá
         # como silencio de datos (demo HU-15).

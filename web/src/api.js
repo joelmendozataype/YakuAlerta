@@ -48,6 +48,8 @@ export const api = {
   alerta: (id) => request(`/alertas/${id}`),
   cerrarAlerta: (id, payload) => request(`/alertas/${id}/cerrar`, { method: 'POST', body: payload }),
   silencio: () => request('/reportes/silencio'),
+  // Directorio de JASS del distrito (una junta por comunidad).
+  jass: () => request('/admin/jass'),
   estadoPublico: (comunidadId) => request(`/publico/comunidad/${comunidadId}/estado`),
   // Afiche comunitario imprimible con QR (para fijar en el punto de agua)
   avisoComunitario: (comunidadId) =>

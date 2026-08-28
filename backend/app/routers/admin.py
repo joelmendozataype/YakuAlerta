@@ -27,9 +27,10 @@ from ..models import (
     AsignacionOperador, Comunidad, Reservorio, Ubigeo, Usuario,
 )
 from ..schemas import (
-    ComunidadIn, ComunidadOut, ReservorioIn, ReservorioOut, UbigeoOut,
+    ComunidadIn, ComunidadOut, JassOut, ReservorioIn, ReservorioOut, UbigeoOut,
     UsuarioIn, UsuarioOut,
 )
+from ..services.directorio_jass import listar_jass
 from ..security import hash_clave
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -68,6 +69,18 @@ def _commit(db: Session) -> None:
     except IntegrityError as e:
         db.rollback()
         raise HTTPException(status.HTTP_409_CONFLICT, f"Violación de integridad: {e.orig}")
+
+
+# ─── Directorio de JASS ─────────────────────────────────────────
+@router.get("/jass", response_model=list[JassOut])
+def directorio_jass(db: Session = Depends(get_db),
+                    usuario: Usuario = Depends(_administra)):
+    """Las JASS del distrito de la ATM.
+
+    Una JASS por comunidad; la ATM acompaña a todas las de su distrito y ve de
+    un vistazo cuál dejó de reportar y cuál tiene el agua en rojo.
+    """
+    return listar_jass(db, None if _es_regional(usuario) else usuario.ubigeo_id)
 
 
 # ─── Ubigeo ──────────────────────────────────────────────────────

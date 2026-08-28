@@ -126,6 +126,7 @@ class UbigeoOut(BaseModel):
 class ComunidadIn(BaseModel):
     ubigeo_id: int
     nombre: str
+    jass_nombre: str | None = None
     latitud: float | None = None
     longitud: float | None = None
     poblacion_servida: int | None = None
@@ -134,6 +135,30 @@ class ComunidadIn(BaseModel):
 class ComunidadOut(ComunidadIn):
     model_config = ConfigDict(from_attributes=True)
     comunidad_id: int
+
+
+class MiembroJass(BaseModel):
+    """Persona de la JASS: quien mide y quien preside."""
+    model_config = ConfigDict(from_attributes=True)
+    usuario_id: int
+    nombres: str
+    rol: RolUsuario
+    telefono: str
+    activo: bool
+
+
+class JassOut(BaseModel):
+    """Una JASS con lo que la ATM necesita para acompanarla."""
+    comunidad_id: int
+    comunidad: str
+    jass_nombre: str
+    poblacion_servida: int | None = None
+    reservorios: int
+    nivel: NivelRiesgo | None = None
+    ultima_medicion: datetime | None = None
+    dias_sin_medir: int | None = None
+    en_silencio: bool
+    miembros: list[MiembroJass]
 
 
 class ReservorioIn(BaseModel):
