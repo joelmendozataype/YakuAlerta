@@ -15,12 +15,15 @@ export default function VigilanciaSalud() {
   const [resumen, setResumen] = useState(null)
   const [alertas, setAlertas] = useState([])
   const [abierta, setAbierta] = useState(null)
+  // Salud no cierra casos, pero sí necesita saber cuáles se resolvieron: es lo
+  // que le permite levantar la vigilancia reforzada de EDA en una comunidad.
+  const [estado, setEstado] = useState('ACTIVA')
   const [error, setError] = useState('')
 
   useEffect(() => {
     Promise.all([
       user?.ubigeo_id ? api.tablero(user.ubigeo_id) : null,
-      api.alertas('ACTIVA'),
+      api.alertas(estado),
     ])
       .then(([t, a]) => {
         setResumen(t)
@@ -28,7 +31,7 @@ export default function VigilanciaSalud() {
         setAlertas([...a.filter((x) => x.nivel === 'ROJO'), ...a.filter((x) => x.nivel !== 'ROJO')])
       })
       .catch((e) => setError(e.message))
-  }, [user])
+  }, [user, estado])
 
   if (error) return <div className="card text-rojo">{error}</div>
   if (!resumen && alertas.length === 0 && !error) return <Spinner texto="Cargando su jurisdicción…" />
@@ -64,10 +67,23 @@ export default function VigilanciaSalud() {
       )}
 
       <div className="card">
-        <h2 className="font-semibold text-slate-700 mb-3">Alertas de su jurisdicción</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <h2 className="font-semibold text-slate-700">Casos de su jurisdicción</h2>
+          <div className="inline-flex rounded-lg bg-slate-100 p-1 text-sm">
+            {[['ACTIVA', 'En curso'], ['CERRADA', 'Resueltos']].map(([valor, rotulo]) => (
+              <button key={valor} onClick={() => { setEstado(valor); setAbierta(null) }}
+                className={`px-3 py-1 rounded-md ${estado === valor
+                  ? 'bg-white shadow text-agua-700 font-medium' : 'text-slate-500'}`}>
+                {rotulo}
+              </button>
+            ))}
+          </div>
+        </div>
         {alertas.length === 0 ? (
           <p className="text-sm text-verde">
-            No hay alertas activas. Se le avisará apenas se detecte una.
+            {estado === 'ACTIVA'
+              ? 'No hay casos en curso. Se le avisará apenas se detecte uno.'
+              : 'Todavía no hay casos resueltos.'}
           </p>
         ) : (
           <div className="space-y-2">

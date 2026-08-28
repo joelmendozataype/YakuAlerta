@@ -378,6 +378,15 @@ class CierreAlertaIn(BaseModel):
 
 
 # ─── Tablero ─────────────────────────────────────────────────────
+class DistritoTablero(UbigeoOut):
+    """Un distrito que el tablero puede mostrar, con cuánto hay que ver en él.
+
+    El conteo evita abrir el tablero en un distrito vacío: los que ya tienen
+    comunidades se ofrecen primero.
+    """
+    comunidades: int = 0
+
+
 class SustentoCierre(BaseModel):
     """En qué se apoyó el cierre de una alerta roja."""
     tipo: str                      # REMEDICION | DICTAMEN_LAB | DIRECTO
@@ -409,6 +418,26 @@ class TableroResumen(BaseModel):
     # semáforo en una magnitud sanitaria comprensible.
     poblacion_expuesta: int = 0
     comunidades: list[SemaforoComunidad]
+
+
+class ComunidadPriorizada(SemaforoComunidad):
+    """Una comunidad en la cola de atención, con su distrito y su puntaje."""
+    distrito: str
+    criticidad: int
+
+
+class PriorizacionRegional(BaseModel):
+    """Dónde concentrar la inversión, comparando toda la región de una vez.
+
+    La DRVCS no administra un distrito: decide entre ellos. Obligarla a elegir
+    uno para verlo por separado era pedirle que comparara de memoria.
+    """
+    distritos: int
+    sistemas_monitoreados: int
+    porcentaje_agua_segura: float
+    poblacion_expuesta: int
+    reservorios_en_silencio: int
+    comunidades: list[ComunidadPriorizada]
 
 
 class HistorialPunto(BaseModel):

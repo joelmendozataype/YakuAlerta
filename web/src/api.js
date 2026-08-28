@@ -43,6 +43,8 @@ export const api = {
     request(`/auth/qr/${token}/reclamar`, { method: 'POST', body: { client_secret: clientSecret } }),
   distritos: () => request('/tablero/distritos'),
   tablero: (ubigeoId) => request(`/tablero/${ubigeoId}`),
+  // Toda la jurisdiccion de una vez, ordenada por atencion.
+  priorizacion: () => request('/tablero/priorizacion'),
   historial: (reservorioId) => request(`/tablero/reservorio/${reservorioId}/historial`),
   alertas: (estado = 'ACTIVA') => request(`/alertas?estado=${estado}`),
   alerta: (id) => request(`/alertas/${id}`),

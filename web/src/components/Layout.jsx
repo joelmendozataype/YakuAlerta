@@ -3,23 +3,28 @@ import { useAuth } from '../auth'
 
 // Cada sección declara qué roles pueden usarla: el menú no ofrece opciones
 // que el servidor luego rechazaría.
-const NAV = [
+export const NAV = [
   // El inicio cambia de nombre según lo que el rol encuentra allí.
   { to: '/', label: 'Inicio', icon: '📊', end: true, roles: null },
-  { to: '/alertas', label: 'Alertas', icon: '🔔', roles: ['ATM', 'DESA', 'ADMIN', 'SALUD', 'DRVCS'] },
+  // La bandeja sirve para atender un caso y cerrarlo. Salud y la DRVCS no
+  // cierran alertas —y ya ven las suyas en su propio inicio, con lo que su
+  // función necesita—, así que para ellas era la misma lista sin la acción.
+  { to: '/alertas', label: 'Alertas', icon: '🔔', roles: ['ATM', 'DESA', 'ADMIN'] },
   // La ATM acompaña a las JASS de su distrito; el ADMIN, a las de toda la región.
   { to: '/jass', label: 'JASS', icon: '🏘️', roles: ['ATM', 'ADMIN'] },
   { to: '/laboratorio', label: 'Laboratorio', icon: '🧪', roles: ['DESA', 'ATM', 'ADMIN'] },
   { to: '/reportes', label: 'Reportes', icon: '📄', roles: ['ATM', 'DESA', 'DRVCS', 'ADMIN'] },
   // El padrón de cuentas: la ATM el de su distrito, el ADMIN el de la región.
   { to: '/usuarios', label: 'Usuarios', icon: '👥', roles: ['ATM', 'ADMIN'] },
-  // Los umbrales del D.S. los mueve solo el ADMIN; el resto los consulta.
-  { to: '/parametros', label: 'Umbrales', icon: '⚖️', roles: ['ADMIN', 'ATM', 'DESA', 'DRVCS'] },
+  // Los umbrales del D.S. los mueve solo el ADMIN. Los consultan quienes
+  // firman o discuten una clasificación; la DRVCS decide inversión y no
+  // los necesita para eso.
+  { to: '/parametros', label: 'Umbrales', icon: '⚖️', roles: ['ADMIN', 'ATM', 'DESA'] },
   // El rastro de quién hizo qué: supervisión, la función propia del ADMIN.
   { to: '/auditoria', label: 'Auditoría', icon: '🧾', roles: ['ADMIN', 'ATM'] },
 ]
 
-const puedeVer = (item, rol) => item.roles === null || item.roles.includes(rol)
+export const puedeVer = (item, rol) => item.roles === null || item.roles.includes(rol)
 
 // Nombre del inicio según el rol: describe lo que el usuario encontrará.
 const INICIO = {

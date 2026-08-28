@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './auth'
-import Layout from './components/Layout'
+import Layout, { NAV, puedeVer } from './components/Layout'
 import Login from './pages/Login'
 import Tablero from './pages/Tablero'
 import Alertas from './pages/Alertas'
@@ -14,9 +14,19 @@ import VigilanciaSalud from './pages/VigilanciaSalud'
 import Priorizacion from './pages/Priorizacion'
 import InicioDesa from './pages/InicioDesa'
 
-function Privada({ children }) {
+/**
+ * Envuelve una pantalla del tablero y comprueba que el rol pueda estar en ella.
+ *
+ * El permiso sale de la misma tabla que dibuja el menú: ocultar una opción sin
+ * cerrar su ruta dejaba entrar escribiendo la dirección, y con dos listas
+ * separadas una acabaría contradiciendo a la otra.
+ */
+function Privada({ ruta, children }) {
   const { user } = useAuth()
   if (!user) return <Navigate to="/login" replace />
+
+  const seccion = NAV.find((n) => n.to === ruta)
+  if (seccion && !puedeVer(seccion, user.rol)) return <Navigate to="/" replace />
   return <Layout>{children}</Layout>
 }
 
@@ -43,13 +53,13 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       {/* La población ve su estado del agua; las instituciones, el tablero. */}
       <Route path="/" element={<Privada><InicioSegunRol /></Privada>} />
-      <Route path="/alertas" element={<Privada><Alertas /></Privada>} />
-      <Route path="/jass" element={<Privada><Jass /></Privada>} />
-      <Route path="/usuarios" element={<Privada><Usuarios /></Privada>} />
-      <Route path="/parametros" element={<Privada><Parametros /></Privada>} />
-      <Route path="/auditoria" element={<Privada><Auditoria /></Privada>} />
-      <Route path="/laboratorio" element={<Privada><Laboratorio /></Privada>} />
-      <Route path="/reportes" element={<Privada><Reportes /></Privada>} />
+      <Route path="/alertas" element={<Privada ruta="/alertas"><Alertas /></Privada>} />
+      <Route path="/jass" element={<Privada ruta="/jass"><Jass /></Privada>} />
+      <Route path="/usuarios" element={<Privada ruta="/usuarios"><Usuarios /></Privada>} />
+      <Route path="/parametros" element={<Privada ruta="/parametros"><Parametros /></Privada>} />
+      <Route path="/auditoria" element={<Privada ruta="/auditoria"><Auditoria /></Privada>} />
+      <Route path="/laboratorio" element={<Privada ruta="/laboratorio"><Laboratorio /></Privada>} />
+      <Route path="/reportes" element={<Privada ruta="/reportes"><Reportes /></Privada>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

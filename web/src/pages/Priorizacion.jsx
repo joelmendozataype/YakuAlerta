@@ -6,58 +6,39 @@ import { NivelBadge, Spinner, StatCard } from '../components/ui'
  * Vista de la Dirección Regional de Vivienda, Construcción y Saneamiento.
  *
  * Su pregunta no es «¿el agua es segura hoy?» sino **«¿dónde invertir?»**. Por
- * eso ordena las comunidades por criticidad combinando tres señales: el nivel
- * de riesgo, la población afectada y el silencio de datos —que suele delatar un
- * sistema abandonado o sin operador.
+ * eso compara toda su jurisdicción de una vez, ordenada por criticidad: el
+ * nivel de riesgo, la población afectada y el silencio de datos —que suele
+ * delatar un sistema abandonado o sin operador.
+ *
+ * Antes obligaba a elegir un distrito y verlo por separado, que es pedirle que
+ * compare de memoria justo lo que tiene que decidir. La criticidad la calcula
+ * el servidor, para que el orden sea el mismo dondequiera que se consulte.
  */
 export default function Priorizacion() {
-  const [distritos, setDistritos] = useState([])
-  const [ubigeoId, setUbigeoId] = useState('')
   const [resumen, setResumen] = useState(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    api.distritos()
-      .then((d) => { setDistritos(d); if (d.length) setUbigeoId(d[0].ubigeo_id) })
-      .catch((e) => setError(e.message))
+    api.priorizacion().then(setResumen).catch((e) => setError(e.message))
   }, [])
 
-  useEffect(() => {
-    if (!ubigeoId) return
-    api.tablero(ubigeoId).then(setResumen).catch((e) => setError(e.message))
-  }, [ubigeoId])
-
   if (error) return <div className="card text-rojo">{error}</div>
-  if (!resumen) return <Spinner texto="Cargando el distrito…" />
+  if (!resumen) return <Spinner texto="Comparando su jurisdicción…" />
 
-  // Criticidad: el riesgo pesa, la población multiplica y el silencio agrava.
-  const puntaje = (c) => {
-    const riesgo = { ROJO: 100, AMARILLO: 50, VERDE: 0 }[c.nivel] ?? 30
-    const gente = Math.min((c.poblacion_servida ?? 0) / 10, 60)
-    const mudo = c.silencio ? 40 : 0
-    return Math.round(riesgo + gente + mudo)
-  }
-
-  const ranking = [...resumen.comunidades].sort((a, b) => puntaje(b) - puntaje(a))
+  const ranking = resumen.comunidades   // ya llega ordenada por criticidad
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Priorización territorial</h1>
-          <p className="text-slate-500 text-sm">
-            Dónde concentrar la inversión en saneamiento, según riesgo, población y silencio de datos.
-          </p>
-        </div>
-        <select className="input w-auto" value={ubigeoId} onChange={(e) => setUbigeoId(e.target.value)}>
-          {distritos.map((d) => (
-            <option key={d.ubigeo_id} value={d.ubigeo_id}>{d.distrito}</option>
-          ))}
-        </select>
+      <div>
+        <h1 className="text-2xl font-bold text-slate-800">Priorización territorial</h1>
+        <p className="text-slate-500 text-sm">
+          Dónde concentrar la inversión en saneamiento, según riesgo, población y silencio
+          de datos · {resumen.distritos} distrito(s) con sistemas registrados.
+        </p>
       </div>
 
       <div className="grid sm:grid-cols-4 gap-4">
-        <StatCard label="Sistemas del distrito" value={resumen.sistemas_monitoreados} />
+        <StatCard label="Sistemas monitoreados" value={resumen.sistemas_monitoreados} />
         <StatCard label="Con agua segura" value={`${resumen.porcentaje_agua_segura}%`} accent="verde" />
         <StatCard label="Personas expuestas" value={resumen.poblacion_expuesta} accent="rojo" />
         <StatCard label="Sin reportar" value={resumen.reservorios_en_silencio} accent="amarillo"
@@ -76,6 +57,7 @@ export default function Priorizacion() {
               <tr>
                 <th className="py-2">#</th>
                 <th>Comunidad</th>
+                <th>Distrito</th>
                 <th>Estado</th>
                 <th className="text-right">Población</th>
                 <th className="text-right">Sin medir</th>
@@ -89,6 +71,7 @@ export default function Priorizacion() {
                     <p className="font-medium text-slate-700">{c.comunidad}</p>
                     <p className="text-xs text-slate-400">{c.reservorio_codigo}</p>
                   </td>
+                  <td className="text-slate-600">{c.distrito}</td>
                   <td><NivelBadge nivel={c.nivel} /></td>
                   <td className="text-right text-slate-600">{c.poblacion_servida ?? '—'}</td>
                   <td className="text-right">

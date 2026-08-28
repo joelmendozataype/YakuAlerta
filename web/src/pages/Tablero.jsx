@@ -15,6 +15,8 @@ export default function Tablero() {
   useEffect(() => {
     api.distritos().then((d) => {
       setDistritos(d)
+      // El backend los devuelve con los que tienen comunidades al frente, así
+      // que el primero es donde hay algo que ver.
       if (d.length) setUbigeoId(d[0].ubigeo_id)
     }).catch(() => setCargando(false))
   }, [])
@@ -58,14 +60,23 @@ export default function Tablero() {
           <h1 className="text-2xl font-bold text-slate-800">Semáforo distrital</h1>
           <p className="text-slate-500 text-sm">Última medición por comunidad · regla de peor caso</p>
         </div>
-        <select className="input max-w-xs" value={ubigeoId || ''}
-          onChange={(e) => setUbigeoId(Number(e.target.value))}>
-          {distritos.map((d) => (
-            <option key={d.ubigeo_id} value={d.ubigeo_id}>
-              {d.distrito} — {d.provincia}
-            </option>
-          ))}
-        </select>
+        {/* Quien administra un solo distrito no elige: el selector le ofrecía
+            doce y abría en el primero del abecedario, vacío y ajeno. */}
+        {distritos.length > 1 ? (
+          <select className="input max-w-xs" value={ubigeoId || ''}
+            onChange={(e) => setUbigeoId(Number(e.target.value))}>
+            {distritos.map((d) => (
+              <option key={d.ubigeo_id} value={d.ubigeo_id}>
+                {d.distrito} — {d.provincia}
+                {d.comunidades ? ` (${d.comunidades})` : ' — sin comunidades'}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <p className="text-sm font-semibold text-agua-800">
+            {distritos[0]?.distrito} — {distritos[0]?.provincia}
+          </p>
+        )}
       </div>
 
       {/* Indicadores del distrito */}
