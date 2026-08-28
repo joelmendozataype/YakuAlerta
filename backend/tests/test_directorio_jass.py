@@ -38,7 +38,7 @@ def test_la_atm_ve_las_jass_de_su_distrito():
     """Varias juntas bajo una sola ATM."""
     jass = _jass_de(_auth(ATM))
     assert len(jass) >= 3
-    assert {j["comunidad"] for j in jass} >= {"Comunidad 01", "Comunidad 02", "Comunidad 03"}
+    assert {j["comunidad"] for j in jass} >= {"COM-01", "COM-02", "COM-03"}
 
 
 def test_cada_comunidad_tiene_una_sola_jass():
@@ -51,19 +51,19 @@ def test_cada_comunidad_tiene_una_sola_jass():
 def test_cada_jass_trae_a_su_gente():
     """Cada junta lista a los suyos, y solo a los suyos."""
     jass = {j["comunidad"]: j for j in _jass_de(_auth(ATM))}
-    uno = jass["Comunidad 01"]
+    uno = jass["COM-01"]
     assert "OPERADOR" in {m["rol"] for m in uno["miembros"]}
 
     # Nadie de otra comunidad se cuela en esta junta.
-    ajenos = {m["usuario_id"] for j in jass.values() if j["comunidad"] != "Comunidad 01"
+    ajenos = {m["usuario_id"] for j in jass.values() if j["comunidad"] != "COM-01"
               for m in j["miembros"]}
     assert not ajenos & {m["usuario_id"] for m in uno["miembros"]}
 
 
 def test_la_jass_reporta_su_estado_y_su_silencio():
     jass = {j["comunidad"]: j for j in _jass_de(_auth(ATM))}
-    assert jass["Comunidad 03"]["nivel"] == "ROJO"      # medición turbia del seed
-    assert jass["Comunidad 01"]["reservorios"] >= 1
+    assert jass["COM-03"]["nivel"] == "ROJO"      # medición turbia del seed
+    assert jass["COM-01"]["reservorios"] >= 1
     for j in jass.values():
         assert j["en_silencio"] is (j["dias_sin_medir"] is None
                                     or j["dias_sin_medir"] > 7)

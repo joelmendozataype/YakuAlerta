@@ -48,10 +48,10 @@ def test_la_atm_corrige_los_datos_de_una_cuenta():
     h = _atm()
     u = _crear_operador(h)
     r = client.patch(f"/admin/usuarios/{u['usuario_id']}", headers=h,
-                     json={"nombres": "Nombre corregido", "entidad": "JASS Comunidad 02"})
+                     json={"nombres": "Nombre corregido", "entidad": "JASS COM-02"})
     assert r.status_code == 200, r.text
     assert r.json()["nombres"] == "Nombre corregido"
-    assert r.json()["entidad"] == "JASS Comunidad 02"
+    assert r.json()["entidad"] == "JASS COM-02"
 
 
 def test_dar_de_baja_impide_entrar_pero_conserva_la_cuenta():
@@ -204,7 +204,7 @@ def test_el_padron_se_lee_por_comunidad_y_distrito():
     """La columna de ámbito debe decir dónde trabaja cada quien, no un id."""
     usuarios = {u["nombres"]: u for u in client.get("/admin/usuarios", headers=_admin()).json()}
     operador = usuarios["Máximo Quispe"]
-    assert operador["comunidad"] == "Comunidad 01"
+    assert operador["comunidad"] == "COM-01"
     assert operador["distrito"] == "LIRCAY"
     # Una cuenta regional no tiene distrito, y eso también debe verse.
     assert usuarios["Esp. Ccora (DESA)"]["distrito"] is None
@@ -342,3 +342,41 @@ def test_cada_comunidad_llega_con_su_distrito():
     # Y vienen ordenadas por territorio, para poder agruparlas al mostrarlas.
     territorios = [(c["provincia"], c["distrito"]) for c in comunidades]
     assert territorios == sorted(territorios)
+
+
+# ─── Territorio real: Huancavelica → Angaraes → 12 distritos ─────
+def test_la_provincia_de_angaraes_esta_completa():
+    """El sistema nace con los doce distritos, no solo con el del piloto.
+
+    Sumar el segundo distrito no debe exigir tocar la base: su ATM entra y ya
+    encuentra su territorio esperándola.
+    """
+    ubigeos = client.get("/admin/ubigeos", headers=_admin()).json()
+    assert len(ubigeos) == 12
+    assert {u["departamento"] for u in ubigeos} == {"HUANCAVELICA"}
+    assert {u["provincia"] for u in ubigeos} == {"ANGARAES"}
+    # Los códigos son los del INEI para la provincia 0902.
+    codigos = sorted(u["codigo_ubigeo"] for u in ubigeos)
+    assert codigos == [f"0902{n:02d}" for n in range(1, 13)]
+    assert next(u for u in ubigeos if u["codigo_ubigeo"] == "090201")["distrito"] == "LIRCAY"
+
+
+def test_la_atm_de_lircay_no_ve_los_otros_once_distritos():
+    """Doce distritos existen, pero cada ATM administra el suyo."""
+    ubigeos = client.get("/admin/ubigeos", headers=_atm()).json()
+    assert len(ubigeos) == 1
+    assert ubigeos[0]["distrito"] == "LIRCAY"
+
+
+def test_solo_lircay_arranca_con_comunidades():
+    """Los once restantes esperan a su ATM: existen, pero aún sin datos."""
+    comunidades = client.get("/admin/comunidades", headers=_admin()).json()
+    assert {c["distrito"] for c in comunidades} == {"LIRCAY"}
+    assert {c["nombre"] for c in comunidades} >= {"COM-01", "COM-02", "COM-03"}
+
+
+def test_el_codigo_del_reservorio_dice_donde_esta():
+    """R1-LIRCAY-COM-01: reservorio, distrito y comunidad en el propio código."""
+    reservorios = client.get("/admin/reservorios", headers=_atm()).json()
+    codigos = {r["codigo"] for r in reservorios}
+    assert {"R1-LIRCAY-COM-01", "R2-LIRCAY-COM-02", "R3-LIRCAY-COM-03"} <= codigos

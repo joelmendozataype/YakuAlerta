@@ -27,6 +27,22 @@ Esto levanta cuatro contenedores:
 | `api` (FastAPI) | http://localhost:8000 · **/docs** | siembra datos demo al arrancar |
 | `web` (tablero React) | http://localhost:5173 | |
 
+**Territorio sembrado.** El sistema nace con los doce distritos de la
+provincia de **Angaraes (Huancavelica)**, con sus códigos INEI `090201`–`090212`.
+Solo **Lircay** arranca con datos; los once restantes esperan a su ATM, de modo
+que sumar el segundo distrito no exige tocar la base.
+
+| Departamento | Provincia | Distrito | Comunidad | Reservorio |
+|---|---|---|---|---|
+| HUANCAVELICA | ANGARAES | LIRCAY | `COM-01` | `R1-LIRCAY-COM-01` |
+| HUANCAVELICA | ANGARAES | LIRCAY | `COM-02` | `R2-LIRCAY-COM-02` |
+| HUANCAVELICA | ANGARAES | LIRCAY | `COM-03` | `R3-LIRCAY-COM-03` |
+
+Cada comunidad tiene su propia JASS (relación 1:1) y la ATM de Lircay acompaña
+a las tres. Las comunidades y sus reservorios se registran a mano desde la
+pantalla **JASS**: cada distrito tiene un número distinto y no hay padrón del
+que leerlas.
+
 **Login del tablero (demo).** Se elige el actor y se entra con DNI y clave;
 la clave de todas las cuentas de demostración es `yaku2026`.
 

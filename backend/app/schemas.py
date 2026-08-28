@@ -136,7 +136,7 @@ class ComunidadOut(ComunidadIn):
     """Una comunidad, siempre acompañada del distrito al que pertenece.
 
     El nombre solo es único dentro de su distrito: dos distritos pueden tener
-    su «Comunidad 01». Sin el territorio, elegir una de una lista sería
+    su «COM-01». Sin el territorio, elegir una de una lista sería
     adivinar.
     """
     model_config = ConfigDict(from_attributes=True)

@@ -102,7 +102,7 @@ function AltaComunidad({ ubigeos, onCreada, onCancelar }) {
           </span>
           <input className="input mt-1" value={f.nombre}
             onChange={(e) => ponerNombre(e.target.value)}
-            placeholder="Comunidad 04" required />
+            placeholder="COM-04" required />
         </label>
 
         <label className="block">
@@ -111,7 +111,7 @@ function AltaComunidad({ ubigeos, onCreada, onCancelar }) {
           </span>
           <input className="input mt-1" value={f.jass_nombre}
             onChange={(e) => setF({ ...f, jass_nombre: e.target.value })}
-            placeholder="JASS Comunidad 04" />
+            placeholder="JASS COM-04" />
         </label>
 
         <label className="block">
@@ -170,7 +170,7 @@ function AltaReservorio({ jass, onCreado, onCancelar }) {
       </p>
       <input className="input" value={f.codigo} required
         onChange={(e) => setF({ ...f, codigo: e.target.value })}
-        placeholder="Código, p. ej. R4 - LIRCAY - COM - 04" />
+        placeholder="Código, p. ej. R4-LIRCAY-COM-04" />
       <div className="grid grid-cols-2 gap-3">
         <input className="input" type="number" step="0.1" min="0" required
           value={f.volumen_m3} onChange={(e) => setF({ ...f, volumen_m3: e.target.value })}

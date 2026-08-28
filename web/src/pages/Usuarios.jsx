@@ -134,7 +134,7 @@ function Formulario({ esAdmin, actores, comunidades, onCreado, onCancelar }) {
             Entidad
           </span>
           <input className="input mt-1" value={f.entidad} onChange={set('entidad')}
-            placeholder="JASS Comunidad 01" />
+            placeholder="JASS COM-01" />
         </label>
 
         <label className="block">
