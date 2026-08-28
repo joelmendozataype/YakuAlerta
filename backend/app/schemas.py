@@ -187,6 +187,45 @@ class UsuarioIn(BaseModel):
     comunidad_id: int | None = None
 
 
+class UsuarioPatch(BaseModel):
+    """Lo que se puede corregir de una cuenta ya creada.
+
+    La clave no está aquí: se restablece por su propio endpoint, que deja
+    rastro en auditoría.
+    """
+    nombres: str | None = None
+    telefono: str | None = None
+    entidad: str | None = None
+    comunidad_id: int | None = None
+    activo: bool | None = None
+
+
+class ClaveTemporalOut(BaseModel):
+    """Clave provisional entregada una sola vez a quien administra."""
+    usuario_id: int
+    nombres: str
+    clave_temporal: str
+
+
+# ─── Parámetros normativos (RNF-07) ──────────────────────────────
+class ParametroOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    parametro_id: int
+    parametro: str
+    unidad: str
+    umbral_amarillo: float | None = None
+    umbral_rojo: float | None = None
+    norma_referencia: str
+    vigente: bool
+
+
+class ParametroPatch(BaseModel):
+    umbral_amarillo: float | None = None
+    umbral_rojo: float | None = None
+    norma_referencia: str | None = None
+    vigente: bool | None = None
+
+
 # ─── Mediciones / sync ───────────────────────────────────────────
 class MedicionIn(BaseModel):
     """Payload de una medición creada en el dispositivo (offline-first)."""

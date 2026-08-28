@@ -7,6 +7,8 @@ import Alertas from './pages/Alertas'
 import Laboratorio from './pages/Laboratorio'
 import Reportes from './pages/Reportes'
 import Jass from './pages/Jass'
+import Usuarios from './pages/Usuarios'
+import Parametros from './pages/Parametros'
 import VigilanciaSalud from './pages/VigilanciaSalud'
 import Priorizacion from './pages/Priorizacion'
 import InicioDesa from './pages/InicioDesa'
@@ -42,6 +44,8 @@ export default function App() {
       <Route path="/" element={<Privada><InicioSegunRol /></Privada>} />
       <Route path="/alertas" element={<Privada><Alertas /></Privada>} />
       <Route path="/jass" element={<Privada><Jass /></Privada>} />
+      <Route path="/usuarios" element={<Privada><Usuarios /></Privada>} />
+      <Route path="/parametros" element={<Privada><Parametros /></Privada>} />
       <Route path="/laboratorio" element={<Privada><Laboratorio /></Privada>} />
       <Route path="/reportes" element={<Privada><Reportes /></Privada>} />
       <Route path="*" element={<Navigate to="/" replace />} />

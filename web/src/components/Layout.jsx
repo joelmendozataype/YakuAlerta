@@ -11,6 +11,10 @@ const NAV = [
   { to: '/jass', label: 'JASS', icon: '🏘️', roles: ['ATM', 'ADMIN'] },
   { to: '/laboratorio', label: 'Laboratorio', icon: '🧪', roles: ['DESA', 'ATM', 'ADMIN'] },
   { to: '/reportes', label: 'Reportes', icon: '📄', roles: ['ATM', 'DESA', 'DRVCS', 'ADMIN'] },
+  // El padrón de cuentas: la ATM el de su distrito, el ADMIN el de la región.
+  { to: '/usuarios', label: 'Usuarios', icon: '👥', roles: ['ATM', 'ADMIN'] },
+  // Los umbrales del D.S. los mueve solo el ADMIN; el resto los consulta.
+  { to: '/parametros', label: 'Umbrales', icon: '⚖️', roles: ['ADMIN', 'ATM', 'DESA', 'DRVCS'] },
 ]
 
 const puedeVer = (item, rol) => item.roles === null || item.roles.includes(rol)

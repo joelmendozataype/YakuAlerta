@@ -16,6 +16,8 @@ Dos salvaguardas sostienen esa delegación (RNF-05, mínimo privilegio):
    (operador, directivo JASS, autoridad local y contacto comunitario), pero no
    cuentas regionales (DESA, DRVCS) ni administradores.
 """
+import secrets
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -27,10 +29,12 @@ from ..models import (
     AsignacionOperador, Comunidad, Reservorio, Ubigeo, Usuario,
 )
 from ..schemas import (
-    ComunidadIn, ComunidadOut, JassOut, ReservorioIn, ReservorioOut, UbigeoOut,
-    UsuarioIn, UsuarioOut,
+    ClaveTemporalOut, ComunidadIn, ComunidadOut, JassOut, ReservorioIn,
+    ReservorioOut, UbigeoOut, UsuarioIn, UsuarioOut, UsuarioPatch,
 )
 from ..services.directorio_jass import listar_jass
+from ..services.perfil import perfil_de
+from ..models import Auditoria
 from ..security import hash_clave
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -147,7 +151,9 @@ def listar_usuarios(db: Session = Depends(get_db),
     q = db.query(Usuario).order_by(Usuario.nombres)
     if not _es_regional(usuario):
         q = q.filter(Usuario.ubigeo_id == usuario.ubigeo_id)
-    return [UsuarioOut.model_validate(u) for u in q]
+    # Con el territorio resuelto: el padrón se lee por comunidad y distrito,
+    # no por un identificador numérico.
+    return [perfil_de(db, u) for u in q]
 
 
 @router.post("/usuarios", response_model=UsuarioOut, status_code=201)
@@ -173,7 +179,7 @@ def crear_usuario(datos: UsuarioIn, db: Session = Depends(get_db),
     db.add(u)
     _commit(db)
     db.refresh(u)
-    return UsuarioOut.model_validate(u)
+    return perfil_de(db, u)
 
 
 # ─── Asignaciones operador ↔ reservorio ─────────────────────────
@@ -196,3 +202,81 @@ def asignar_operador(usuario_id: int, reservorio_id: int,
     _commit(db)
     return {"asignacion_id": a.asignacion_id, "usuario_id": usuario_id,
             "reservorio_id": reservorio_id}
+
+
+# ─── Corrección de cuentas ya creadas ───────────────────────────
+def _exige_poder_sobre(quien: Usuario, objetivo: Usuario) -> None:
+    """Quién puede tocar la cuenta de quién.
+
+    Tres reglas, en orden: nadie se desactiva a sí mismo (dejaría el sistema
+    sin quien lo administre), la ATM no sale de su distrito y la ATM no toca
+    cuentas de rango igual o superior al suyo.
+    """
+    if quien.usuario_id == objetivo.usuario_id:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "No puede modificar su propia cuenta desde aquí.",
+        )
+    if _es_regional(quien):
+        return
+    _exige_su_distrito(quien, objetivo.ubigeo_id)
+    if objetivo.rol not in ROLES_QUE_CREA_LA_ATM:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            "Esa cuenta es de ámbito regional: la administra la DIRESA/DESA.",
+        )
+
+
+@router.patch("/usuarios/{usuario_id}", response_model=UsuarioOut)
+def corregir_usuario(usuario_id: int, datos: UsuarioPatch,
+                     db: Session = Depends(get_db),
+                     usuario: Usuario = Depends(_administra)):
+    """Corrige los datos de una cuenta, o la activa y desactiva.
+
+    Desactivar es la baja: un operador que deja la JASS conserva su historial
+    de mediciones —no se borra nada— pero deja de poder entrar.
+    """
+    objetivo = db.get(Usuario, usuario_id)
+    if objetivo is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
+    _exige_poder_sobre(usuario, objetivo)
+
+    cambios = datos.model_dump(exclude_unset=True)
+    if not cambios:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "No hay nada que corregir.")
+    for campo, valor in cambios.items():
+        setattr(objetivo, campo, valor)
+
+    db.add(Auditoria(
+        usuario_id=usuario.usuario_id,
+        accion="BAJA_USUARIO" if cambios.get("activo") is False else "EDITA_USUARIO",
+        entidad_afectada="usuario", registro_id=str(objetivo.usuario_id),
+    ))
+    _commit(db)
+    db.refresh(objetivo)
+    return perfil_de(db, objetivo)
+
+
+@router.post("/usuarios/{usuario_id}/clave", response_model=ClaveTemporalOut)
+def restablecer_clave(usuario_id: int, db: Session = Depends(get_db),
+                      usuario: Usuario = Depends(_administra)):
+    """Genera una clave provisional para entregarla en mano.
+
+    Se muestra una sola vez a quien administra: no queda guardada en claro en
+    ningún lado. Es la salida para el operador que olvidó su clave y no tiene
+    señal para recibir el código de recuperación por SMS.
+    """
+    objetivo = db.get(Usuario, usuario_id)
+    if objetivo is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
+    _exige_poder_sobre(usuario, objetivo)
+
+    temporal = f"yaku{secrets.randbelow(1_000_000):06d}"
+    objetivo.clave_hash = hash_clave(temporal)
+    db.add(Auditoria(
+        usuario_id=usuario.usuario_id, accion="RESET_CLAVE",
+        entidad_afectada="usuario", registro_id=str(objetivo.usuario_id),
+    ))
+    _commit(db)
+    return ClaveTemporalOut(usuario_id=objetivo.usuario_id,
+                            nombres=objetivo.nombres, clave_temporal=temporal)

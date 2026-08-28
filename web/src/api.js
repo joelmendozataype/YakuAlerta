@@ -50,6 +50,18 @@ export const api = {
   silencio: () => request('/reportes/silencio'),
   // Directorio de JASS del distrito (una junta por comunidad).
   jass: () => request('/admin/jass'),
+  // Padrón de cuentas: la ATM administra su distrito; el ADMIN, la región.
+  usuarios: () => request('/admin/usuarios'),
+  crearUsuario: (payload) => request('/admin/usuarios', { method: 'POST', body: payload }),
+  corregirUsuario: (id, payload) =>
+    request(`/admin/usuarios/${id}`, { method: 'PATCH', body: payload }),
+  restablecerClave: (id) =>
+    request(`/admin/usuarios/${id}/clave`, { method: 'POST' }),
+  comunidades: () => request('/admin/comunidades'),
+  // Umbrales normativos (RNF-07): los mueve solo el ADMIN.
+  parametros: () => request('/parametros'),
+  corregirParametro: (id, payload) =>
+    request(`/parametros/${id}`, { method: 'PATCH', body: payload }),
   // Afiche comunitario imprimible con QR (para fijar en el punto de agua)
   avisoComunitario: (comunidadId) =>
     request(`/avisos/comunidad/${comunidadId}`, { blob: true }),
