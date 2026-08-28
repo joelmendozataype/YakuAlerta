@@ -191,12 +191,17 @@ class ReservorioOut(ReservorioIn):
 
 
 class UsuarioIn(BaseModel):
+    """Alta de una cuenta.
+
+    La entidad no se envía: se deduce del actor y del territorio, para que la
+    misma junta no acabe registrada de tres formas distintas.
+    """
     nombres: str
     dni: str | None = None
     telefono: str
     clave: str
     rol: RolUsuario
-    entidad: str | None = None
+    entidad: str | None = None   # solo se respeta si viene explícita
     # Ámbito territorial (RF-06). Vacíos = alcance regional.
     ubigeo_id: int | None = None
     comunidad_id: int | None = None
@@ -211,6 +216,8 @@ class ActorOut(BaseModel):
     tablero: bool
     rol_principal: RolUsuario      # con el que se registra una cuenta suya
     roles: list[RolUsuario]        # todos los que agrupa
+    ambito: str                    # comunidad | distrito | regional
+    entidad_ejemplo: str           # cómo se nombrará su entidad
     cuentas: int
     activas: int
 

@@ -34,7 +34,9 @@ from ..schemas import (
     ActorOut, ClaveTemporalOut, ComunidadIn, ComunidadOut, JassOut, ReservorioIn,
     ReservorioOut, UbigeoOut, UsuarioIn, UsuarioOut, UsuarioPatch,
 )
+from ..rules.escalamiento import ambito_de
 from ..services.codigo_reservorio import siguiente_codigo
+from ..services.identidad import entidad_de, exigir_territorio
 from ..services.directorio_jass import listar_jass
 from ..services.perfil import perfil_de
 from ..models import Auditoria
@@ -78,6 +80,29 @@ def _commit(db: Session) -> None:
         raise HTTPException(status.HTTP_409_CONFLICT, f"Violación de integridad: {e.orig}")
 
 
+def _muestra(db: Session, rol: RolUsuario,
+             quien: Usuario) -> tuple[Comunidad | None, Ubigeo | None]:
+    """Territorio de muestra para ilustrar cómo se nombrará la entidad.
+
+    Quien administra un distrito ve el suyo; el ADMIN, que no tiene distrito
+    propio, ve el primero de la región para que el ejemplo sea concreto en vez
+    de decir «su distrito».
+    """
+    ambito = ambito_de(rol)
+    if ambito == "regional":
+        return None, None
+
+    ubigeo = (db.get(Ubigeo, quien.ubigeo_id) if quien.ubigeo_id
+              else db.query(Ubigeo).order_by(Ubigeo.codigo_ubigeo).first())
+    if ambito != "comunidad":
+        return None, ubigeo
+
+    q = db.query(Comunidad)
+    if ubigeo:
+        q = q.filter(Comunidad.ubigeo_id == ubigeo.ubigeo_id)
+    return q.order_by(Comunidad.nombre).first(), ubigeo
+
+
 # ─── Los actores del sistema ────────────────────────────────────
 @router.get("/actores", response_model=list[ActorOut])
 def listar_actores(db: Session = Depends(get_db),
@@ -102,6 +127,8 @@ def listar_actores(db: Session = Depends(get_db),
             movil=grupo in GRUPOS_DE_LA_APP,
             tablero=grupo in GRUPOS_DEL_TABLERO,
             roles=list(roles),
+            ambito=ambito_de(principal),
+            entidad_ejemplo=entidad_de(db, principal, *_muestra(db, principal, usuario)),
             cuentas=len(suyas),
             activas=sum(1 for u in suyas if u.activo),
         ))
@@ -217,9 +244,17 @@ def crear_usuario(datos: UsuarioIn, db: Session = Depends(get_db),
         # La cuenta nace en el distrito de quien la registra.
         datos.ubigeo_id = usuario.ubigeo_id
 
+    # El territorio que exige su ámbito, y la entidad que de él se desprende.
+    exigir_territorio(datos.rol, datos.comunidad_id)
+    comunidad = db.get(Comunidad, datos.comunidad_id) if datos.comunidad_id else None
+    if comunidad is not None and datos.ubigeo_id is None:
+        datos.ubigeo_id = comunidad.ubigeo_id
+    ubigeo = db.get(Ubigeo, datos.ubigeo_id) if datos.ubigeo_id else None
+
     u = Usuario(
         nombres=datos.nombres, dni=datos.dni, telefono=datos.telefono,
-        clave_hash=hash_clave(datos.clave), rol=datos.rol, entidad=datos.entidad,
+        clave_hash=hash_clave(datos.clave), rol=datos.rol,
+        entidad=datos.entidad or entidad_de(db, datos.rol, comunidad, ubigeo),
         ubigeo_id=datos.ubigeo_id, comunidad_id=datos.comunidad_id,
     )
     db.add(u)

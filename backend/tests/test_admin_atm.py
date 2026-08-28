@@ -51,10 +51,11 @@ def test_la_atm_solo_ve_su_distrito():
 def test_la_atm_registra_perfiles_de_campo():
     h = _auth(ATM)
     dni, telefono = _identidad_nueva()
+    comunidad = client.get("/admin/comunidades", headers=h).json()[0]
     r = client.post("/admin/usuarios", headers=h, json={
         "nombres": "Operador de prueba", "dni": dni,
         "telefono": telefono, "clave": "clave12345",
-        "rol": "OPERADOR",
+        "rol": "OPERADOR", "comunidad_id": comunidad["comunidad_id"],
     })
     assert r.status_code == 201, r.text
     # La cuenta nace en el distrito de la ATM que la registró.

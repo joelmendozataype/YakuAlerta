@@ -141,11 +141,13 @@ def test_el_directivo_jass_tampoco_vincula(qr):
     token, client_secret = qr
     atm = client.post("/auth/login", json={"telefono": "987000020", "clave": CLAVE})
     n = random.randint(10_000_000, 79_999_999)
-    alta = client.post("/admin/usuarios",
-                       headers={"Authorization": f"Bearer {atm.json()['access_token']}"},
+    cabecera = {"Authorization": f"Bearer {atm.json()['access_token']}"}
+    comunidad = client.get("/admin/comunidades", headers=cabecera).json()[0]
+    alta = client.post("/admin/usuarios", headers=cabecera,
                        json={"nombres": "Directivo de prueba", "dni": str(n),
                              "telefono": f"9{n % 100_000_000:08d}", "clave": "clave12345",
-                             "rol": "DIRECTIVO_JASS"})
+                             "rol": "DIRECTIVO_JASS",
+                             "comunidad_id": comunidad["comunidad_id"]})
     assert alta.status_code == 201, alta.text
 
     d = client.post("/auth/login", json={"dni": str(n), "clave": "clave12345"})

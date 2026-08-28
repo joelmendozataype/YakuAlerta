@@ -19,7 +19,14 @@ const ACTORES_DE_CAMPO = ['JASS', 'USUARIO']
 
 const vacio = {
   nombres: '', dni: '', telefono: '', clave: '',
-  rol: 'OPERADOR', entidad: '', comunidad_id: '',
+  rol: 'OPERADOR', comunidad_id: '',
+}
+
+// Qué territorio pide cada ámbito, dicho para quien registra la cuenta.
+const AMBITO = {
+  comunidad: 'Trabaja en una comunidad concreta: indique cuál.',
+  distrito: 'Alcance distrital: cubre todo el distrito, no una sola comunidad.',
+  regional: 'Alcance regional: no se asigna a un territorio.',
 }
 
 function Formulario({ esAdmin, actores, comunidades, onCreado, onCancelar }) {
@@ -44,17 +51,30 @@ function Formulario({ esAdmin, actores, comunidades, onCreado, onCancelar }) {
 
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
 
+  // El actor elegido decide qué territorio hace falta y cómo se nombrará la
+  // entidad: ninguna de las dos cosas se teclea.
+  const actor = actores.find((a) => a.rol_principal === f.rol)
+  const esComunal = actor?.ambito === 'comunidad'
+  const comunidadElegida = comunidades.find(
+    (c) => String(c.comunidad_id) === String(f.comunidad_id),
+  )
+  const entidad = esComunal
+    ? (comunidadElegida
+      ? (comunidadElegida.jass_nombre || `JASS ${comunidadElegida.nombre}`)
+      : null)
+    : actor?.entidad_ejemplo
+
   async function enviar(e) {
     e.preventDefault()
     if (f.dni.length !== 8) return setError('El DNI debe tener 8 dígitos.')
     if (f.clave.length < 8) return setError('La clave debe tener al menos 8 caracteres.')
+    if (esComunal && !f.comunidad_id) return setError('Elija la comunidad donde trabaja.')
     setError('')
     setGuardando(true)
     try {
       await api.crearUsuario({
         ...f,
-        comunidad_id: f.comunidad_id ? Number(f.comunidad_id) : null,
-        entidad: f.entidad || null,
+        comunidad_id: esComunal ? Number(f.comunidad_id) : null,
       })
       setF(vacio)
       onCreado()
@@ -97,45 +117,68 @@ function Formulario({ esAdmin, actores, comunidades, onCreado, onCancelar }) {
           <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Actor
           </span>
-          <select className="input mt-1" value={f.rol} onChange={set('rol')}>
+          <select className="input mt-1" value={f.rol}
+            onChange={(e) => {
+              const nuevo = actores.find((a) => a.rol_principal === e.target.value)
+              setF({
+                ...f, rol: e.target.value,
+                comunidad_id: nuevo?.ambito === 'comunidad' ? f.comunidad_id : '',
+              })
+            }}>
             {disponibles.map((a) => (
               <option key={a.grupo} value={a.rol_principal}>{a.actor}</option>
             ))}
           </select>
+          {actor && (
+            <span className="mt-1 block text-xs text-slate-400">{AMBITO[actor.ambito]}</span>
+          )}
         </label>
 
-        <label className="block">
-          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Comunidad
-          </span>
-          {comunidades.length === 0 && (
-            <span className="mt-1 block text-xs text-amarillo">
-              Su distrito aún no tiene comunidades. Regístrelas desde «JASS».
+        {/* La comunidad solo se pide a quien trabaja en una: para los demás
+            sería asignarles una y dejarlos fuera del resto del distrito. */}
+        {esComunal && (
+          <label className="block">
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Comunidad <span className="text-rojo">*</span>
             </span>
-          )}
-          <select className="input mt-1" value={f.comunidad_id} onChange={set('comunidad_id')}>
-            <option value="">Sin comunidad (ámbito distrital)</option>
-            {variosDistritos
-              ? Object.entries(porDistrito).map(([distrito, lista]) => (
-                <optgroup key={distrito} label={distrito}>
-                  {lista.map((c) => (
+            {comunidades.length === 0 ? (
+              <span className="mt-1 block text-xs text-amarillo">
+                Su distrito aún no tiene comunidades. Regístrelas desde «JASS».
+              </span>
+            ) : (
+              <select className="input mt-1" value={f.comunidad_id}
+                onChange={set('comunidad_id')} required>
+                <option value="">Seleccione…</option>
+                {variosDistritos
+                  ? Object.entries(porDistrito).map(([distrito, lista]) => (
+                    <optgroup key={distrito} label={distrito}>
+                      {lista.map((c) => (
+                        <option key={c.comunidad_id} value={c.comunidad_id}>{c.nombre}</option>
+                      ))}
+                    </optgroup>
+                  ))
+                  : comunidades.map((c) => (
                     <option key={c.comunidad_id} value={c.comunidad_id}>{c.nombre}</option>
                   ))}
-                </optgroup>
-              ))
-              : comunidades.map((c) => (
-                <option key={c.comunidad_id} value={c.comunidad_id}>{c.nombre}</option>
-              ))}
-          </select>
-        </label>
+              </select>
+            )}
+          </label>
+        )}
 
-        <label className="block">
+        {/* La entidad no se teclea: se desprende del actor y del territorio. */}
+        <div className="block">
           <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Entidad
           </span>
-          <input className="input mt-1" value={f.entidad} onChange={set('entidad')}
-            placeholder="JASS COM-01" />
-        </label>
+          <p className="input mt-1 bg-slate-50 text-slate-600 truncate">
+            {entidad || '—'}
+          </p>
+          <span className="mt-1 block text-xs text-slate-400">
+            {entidad
+              ? 'Se asigna sola, según el actor y su territorio.'
+              : 'Elija la comunidad para saber a qué junta representa.'}
+          </span>
+        </div>
 
         <label className="block">
           <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">

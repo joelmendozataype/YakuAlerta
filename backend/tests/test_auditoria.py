@@ -50,10 +50,11 @@ def test_cada_hecho_dice_quien_lo_hizo_y_en_palabras():
 def test_dar_de_baja_una_cuenta_deja_rastro():
     h = _atm()
     n = random.randint(10_000_000, 79_999_999)
+    comunidad = client.get("/admin/comunidades", headers=h).json()[0]
     alta = client.post("/admin/usuarios", headers=h, json={
         "nombres": "Cuenta auditada", "dni": str(n),
         "telefono": f"9{n % 100_000_000:08d}", "clave": "clave12345",
-        "rol": "OPERADOR",
+        "rol": "OPERADOR", "comunidad_id": comunidad["comunidad_id"],
     })
     assert alta.status_code == 201, alta.text
     uid = alta.json()["usuario_id"]

@@ -34,10 +34,13 @@ def _identidad() -> tuple[str, str]:
 
 
 def _crear_operador(headers: dict) -> dict:
+    """Un operador siempre pertenece a una comunidad: sin ella no tiene qué medir."""
     dni, telefono = _identidad()
+    comunidad = client.get("/admin/comunidades", headers=headers).json()[0]
     r = client.post("/admin/usuarios", headers=headers, json={
         "nombres": "Operador de prueba", "dni": dni, "telefono": telefono,
         "clave": "clave12345", "rol": "OPERADOR",
+        "comunidad_id": comunidad["comunidad_id"],
     })
     assert r.status_code == 201, r.text
     return r.json()
